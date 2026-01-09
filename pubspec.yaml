@@ -37,8 +37,11 @@ dependencies:
   cupertino_icons: ^1.0.8
   http: ^1.6.0
   intl: ^0.20.2
-  hive: ^2.2.3
-  hive_flutter: ^1.1.0
+  # Replaced Hive with sembast (pure-Dart file DB)
+  sembast: ^3.8.2
+  path: ^1.9.0
+  file_picker: ^8.0.0
+  csv: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -49,7 +52,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -61,6 +64,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - export/fuel_logs_export.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:

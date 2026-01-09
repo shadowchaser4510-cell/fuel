@@ -57,3 +57,34 @@ class FuelLog {
     };
   }
 }
+
+class ServiceRecord {
+  final DateTime date;
+  final int odometer;
+  final double cost;
+
+  ServiceRecord({
+    required this.date,
+    required this.odometer,
+    required this.cost,
+  });
+
+  factory ServiceRecord.fromJson(dynamic json) {
+    if (json is Map) {
+      return ServiceRecord(
+        date: DateTime.parse(json['date'] ?? json['Date'] ?? ''),
+        odometer: int.parse(json['odometer']?.toString() ?? json['Odometer']?.toString() ?? '0'),
+        cost: double.parse(json['cost']?.toString() ?? json['Cost']?.toString() ?? '0'),
+      );
+    }
+    throw Exception('Unsupported ServiceRecord json format: ${json.runtimeType}');
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'date': date.toIso8601String(),
+      'odometer': odometer,
+      'cost': cost,
+    };
+  }
+}

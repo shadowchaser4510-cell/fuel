@@ -7,7 +7,8 @@ plugins {
 
 android {
     namespace = "com.example.fuel_tracker"
-    compileSdk = flutter.compileSdkVersion
+    // Use SDK 35 to satisfy plugins that require Android 35+
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -19,13 +20,20 @@ android {
         jvmTarget = JavaVersion.VERSION_1_8
     }
 
+    packagingOptions {
+        resources {
+            excludes += ['META-INF/proguard/androidx-*.pro']
+        }
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.fuel_tracker"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // Target SDK 35 to match compileSdk and plugin expectations
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -41,4 +49,10 @@ android {
 
 flutter {
     source = "../.."
+}
+
+gradle.projectsEvaluated {
+    tasks.withType(JavaCompile) {
+        options.compilerArgs.add('-Xlint:-deprecation')
+    }
 }

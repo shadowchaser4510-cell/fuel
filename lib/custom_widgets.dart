@@ -145,43 +145,49 @@ class BarChart extends StatelessWidget {
   Widget build(BuildContext context) {
     double maxY = dataPoints.isEmpty ? 1 : dataPoints.reduce((a, b) => a > b ? a : b);
 
+    // Calculate responsive layout values
+    // screen width available if needed for responsive calculations
+
     return SizedBox(
       height: height,
       child: Column(
         children: [
           Expanded(
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: List.generate(dataPoints.length, (index) {
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(NumberFormat.currency(symbol: '\$', decimalDigits: 0).format(dataPoints[index]),
-                        style: const TextStyle(color: kSubTextColor, fontSize: 10)),
-                    const SizedBox(height: 5),
-                    Container(
-                      width: 12,
-                      height: (dataPoints[index] / maxY) * (height - 30), // Adjust height
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [kPrimaryColor, kSecondaryColor],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
+                final barHeight = (dataPoints[index] / maxY) * (height - 40);
+                return Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(NumberFormat.currency(symbol: '\$', decimalDigits: 0).format(dataPoints[index]),
+                          style: const TextStyle(color: kSubTextColor, fontSize: 10)),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: 24,
+                        height: barHeight.clamp(4.0, height - 40),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [kPrimaryColor, kSecondaryColor],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                        borderRadius: BorderRadius.circular(4),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 );
               }),
             ),
           ),
           const SizedBox(height: 5),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: List.generate(labels.length, (index) {
-              return Text(labels[index], style: const TextStyle(color: kSubTextColor, fontSize: 10));
+              return Expanded(
+                child: Text(labels[index], style: const TextStyle(color: kSubTextColor, fontSize: 10), textAlign: TextAlign.center),
+              );
             }),
           ),
         ],
@@ -246,8 +252,9 @@ class CustomBottomNavigationBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildNavItem(Icons.home, 0),
-          _buildAddButton(),
           _buildNavItem(Icons.analytics, 1),
+          _buildNavItem(Icons.build, 2),
+          _buildNavItem(Icons.history, 3),
         ],
       ),
     );
@@ -267,24 +274,6 @@ class CustomBottomNavigationBar extends StatelessWidget {
           color: selectedIndex == index ? kPrimaryColor : kSubTextColor,
           size: 28,
         ),
-      ),
-    );
-  }
-
-  Widget _buildAddButton() {
-    return GestureDetector(
-      onTap: onAddTapped,
-      child: Container(
-        width: 50,
-        height: 50,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [kPrimaryColor, kSecondaryColor]),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(color: kPrimaryColor.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 5)),
-          ],
-        ),
-        child: const Icon(Icons.add, color: Colors.white, size: 30),
       ),
     );
   }

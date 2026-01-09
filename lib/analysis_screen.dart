@@ -16,13 +16,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   bool _isLoading = true;
 
   // Chart Data State
-  List<double> _monthlySpendData = List.filled(12, 0.0);
+  List<double> _monthlySpendData = List.filled(6, 0.0);
   List<double> _quarterlyDrivenData = List.filled(4, 0.0);
   List<double> _recentMileageData = [];
   List<String> _recentMileageLabels = [];
   
   // Labels
-  final List<String> _monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  List<String> _monthLabels = [];
 
   @override
   void initState() {
@@ -71,19 +71,34 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   }
 
   void _calculateMonthlySpend(List<FuelLog> logs, {int? year}) {
-    // Reset data
-    var spend = List.filled(12, 0.0);
-    final int targetYear = year ?? logs.last.date.year;
-
-    for (var log in logs) {
-      // Filter for the target year
-      if (log.date.year == targetYear) {
-        // Month is 1-based (1=Jan), so subtract 1 for index
-        int monthIndex = log.date.month - 1;
-        spend[monthIndex] += log.cost;
+    // Get current date and calculate 6 months ago
+    final now = DateTime.now();
+    final sixMonthsAgo = DateTime(now.year, now.month - 6, now.day);
+    
+    // Filter logs from last 6 months and create month labels
+    final recentLogs = logs.where((log) => log.date.isAfter(sixMonthsAgo)).toList();
+    
+    // Create data array for 6 months
+    var spend = List.filled(6, 0.0);
+    var monthLabels = <String>[];
+    
+    // Generate labels for last 6 months
+    for (int i = 5; i >= 0; i--) {
+      final date = DateTime(now.year, now.month - i, 1);
+      monthLabels.add(DateFormat('MMM').format(date));
+    }
+    
+    // Aggregate spending by month in the last 6 months
+    for (var log in recentLogs) {
+      final monthDiff = (now.year - log.date.year) * 12 + (now.month - log.date.month);
+      if (monthDiff >= 0 && monthDiff < 6) {
+        final index = 5 - monthDiff;
+        spend[index] += log.cost;
       }
     }
+    
     _monthlySpendData = spend;
+    _monthLabels = monthLabels;
   }
 
   void _calculateQuarterlyDriven(List<FuelLog> logs, {int? year}) {
@@ -151,6 +166,16 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () => _onRefresh(),
           ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.download, color: Colors.white),
+            onSelected: (value) => _handleExport(value),
+            itemBuilder: (BuildContext context) => [
+              const PopupMenuItem(value: 'fuel_json', child: Text('Export Fuel (JSON)')),
+              const PopupMenuItem(value: 'fuel_csv', child: Text('Export Fuel (CSV)')),
+              const PopupMenuItem(value: 'service_json', child: Text('Export Service (JSON)')),
+              const PopupMenuItem(value: 'service_csv', child: Text('Export Service (CSV)')),
+            ],
+          ),
         ],
       ),
       body: _isLoading
@@ -164,21 +189,22 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [ 
                   // 1. Monthly Spend
-                  const Text("Monthly Fuel Spend (This Year)", style: TextStyle(color: kTextColor, fontSize: 16, fontWeight: FontWeight.bold)),
+                  const Text("Monthly Fuel Spend (Last 6 Months)", style: TextStyle(color: kTextColor, fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 15),
                           CustomCard(
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         BarChart(
                           dataPoints: _monthlySpendData, 
                           labels: _monthLabels,
-                          height: 180,
+                          height: 200,
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                         const Align(
                           alignment: Alignment.centerRight,
-                          child: Text('Showing data for the latest year present in Google Sheets', style: TextStyle(color: kSubTextColor, fontSize: 10)),
+                          child: Text('Showing data for the last 6 months', style: TextStyle(color: kSubTextColor, fontSize: 10)),
                         )
                       ],
                     ),
@@ -247,6 +273,53 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Future<void> _onRefresh() async {
     if (mounted) setState(() => _isLoading = true);
     await _fetchAndProcessData(showSnackbar: true);
+  }
+
+  Future<void> _handleExport(String type) async {
+    try {
+      String? path;
+      String message;
+      
+      switch (type) {
+        case 'fuel_json':
+          path = await _apiService.exportFuelLogsAsJson();
+          message = 'Fuel logs exported to:\n$path';
+          break;
+        case 'fuel_csv':
+          path = await _apiService.exportFuelLogsAsCsv();
+          message = 'Fuel logs exported to:\n$path';
+          break;
+        case 'service_json':
+          path = await _apiService.exportServiceRecordsAsJson();
+          message = 'Service records exported to:\n$path';
+          break;
+        case 'service_csv':
+          path = await _apiService.exportServiceRecordsAsCsv();
+          message = 'Service records exported to:\n$path';
+          break;
+        default:
+          message = 'Unknown export type';
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildQLabel(String label, double value) {

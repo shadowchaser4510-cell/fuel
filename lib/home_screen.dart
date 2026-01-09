@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'custom_widgets.dart';
 import 'transaction_model.dart';
 import 'api_service.dart';
+import 'log_refueling_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback onNavigateToAnalysis;
@@ -37,8 +38,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchData() async {
     try {
       final logs = await _apiService.getFuelLogs();
-      // Sort by date to find the latest
-      logs.sort((a, b) => a.date.compareTo(b.date));
+      // Sort by date ascending, then by odometer descending to find the latest (higher odometer = newer on same day)
+      logs.sort((a, b) {
+        final dateCompare = a.date.compareTo(b.date);
+        if (dateCompare != 0) return dateCompare;
+        return b.odometer.compareTo(a.odometer);
+      });
 
       setState(() {
         _fuelLogs = logs;
@@ -63,8 +68,21 @@ class _HomeScreenState extends State<HomeScreen> {
     final difference = DateTime.now().difference(lastLog.date).inDays;
     _daysSinceLastRefuel = "$difference days ago";
 
-    // 2. Last Mileage (odometer of last refueling)
-    _lastMileage = "${lastLog.odometer} km";
+    // 2. Last Mileage — show the mileage (km per litre) for the latest refuel if possible.
+    if (_fuelLogs.length >= 2) {
+      final prevLog = _fuelLogs[_fuelLogs.length - 2];
+      final distance = lastLog.odometer - prevLog.odometer;
+      if (distance > 0 && lastLog.liters > 0) {
+        final mileage = distance / lastLog.liters;
+        _lastMileage = "${mileage.toStringAsFixed(1)} km/L";
+      } else {
+        // Fallback to odometer if we cannot compute mileage
+        _lastMileage = "${lastLog.odometer} km";
+      }
+    } else {
+      // Not enough data to compute mileage — show odometer reading
+      _lastMileage = "${lastLog.odometer} km";
+    }
   }
 
 
@@ -93,6 +111,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openAddSheet,
+        backgroundColor: kPrimaryColor,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
@@ -234,6 +258,23 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
 
     );
+  }
+
+  Future<void> _openAddSheet() async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: const LogRefuelingScreen(),
+      ),
+    );
+
+    if (result == true) {
+      // A new entry was added — refresh the list and recalculate summary
+      await _fetchData();
+    }
   }
 
   // Summary Card showing a large number and a small unit/label below

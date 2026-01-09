@@ -1,25 +1,13 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'analysis_screen.dart';
+import 'history_screen.dart';
+import 'service_screen.dart';
 import 'custom_widgets.dart';
-import 'dart:io';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'hive_adapters/fuel_log_adapter.dart';
+import 'log_refueling_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Prefer existing project-local .hive_data directory (created by migration)
-  final hiveDir = Directory('${Directory.current.path}/.hive_data');
-  if (await hiveDir.exists()) {
-    Hive.init(hiveDir.path);
-  } else {
-    await Hive.initFlutter();
-  }
-
-  Hive.registerAdapter(FuelLogAdapter());
-  await Hive.openBox('fuel_logs');
-
   runApp(const FuelTrackerApp());
 }
 
@@ -58,6 +46,8 @@ class MainNavigationWrapper extends StatefulWidget {
 
 class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
   int _selectedIndex = 0;
+  // Token used to force recreation of the HomeScreen so it reloads data
+  int _homeReloadToken = 0;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -66,10 +56,21 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
   }
 
   void _openLogRefuelingSheet() async {
-    // This can be called from the Bottom Navigation Bar's '+' button
-    // For now, the HomeScreen's '+' button handles this.
-    // You can implement similar logic here if you want the bottom nav button to work globally.
-    debugPrint("Add button tapped from bottom nav");
+    // Open the Log Refueling sheet and refresh Home on success.
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: const LogRefuelingScreen(),
+      ),
+    );
+
+    // If a new entry was saved (sheet returns true), force HomeScreen to rebuild and reload data
+    if (result == true) {
+      setState(() => _homeReloadToken++);
+    }
   }
 
   @override
@@ -78,8 +79,10 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          HomeScreen(onNavigateToAnalysis: () => _onItemTapped(1)),
+          HomeScreen(key: ValueKey(_homeReloadToken), onNavigateToAnalysis: () => _onItemTapped(1)),
           const AnalysisScreen(),
+          const ServiceScreen(),
+          const HistoryScreen(),
         ],
       ),
       bottomNavigationBar: CustomBottomNavigationBar(
