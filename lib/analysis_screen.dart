@@ -263,19 +263,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text("Total Fuel Cost",
-                                style: TextStyle(
-                                    color: kSubTextColor, fontSize: 14)),
                             Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  "₹${_totalFuelSpent.toStringAsFixed(2)}",
-                                  style: const TextStyle(
-                                      color: kPrimaryColor,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold),
-                                ),
+                                const Text("Total Fuel Cost",
+                                    style: TextStyle(
+                                        color: kSubTextColor, fontSize: 14)),
                                 if (_totalFuelSince != null)
                                   Text(
                                     'Since ${DateFormat('dd MMM yyyy').format(_totalFuelSince!)}',
@@ -283,6 +276,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                         color: kSubTextColor, fontSize: 12),
                                   ),
                               ],
+                            ),
+                            Text(
+                              "₹${_totalFuelSpent.toStringAsFixed(2)}",
+                              style: const TextStyle(
+                                  color: kPrimaryColor,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),

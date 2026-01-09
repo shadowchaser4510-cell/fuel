@@ -147,7 +147,7 @@ class _LogRefuelingScreenState extends State<LogRefuelingScreen> {
                   const SizedBox(width: 15),
                   Expanded(
                       child: _buildInputField(
-                          _costController, "Total Cost (₹)", Icons.attach_money)),
+                          _costController, "Total Cost", Icons.currency_rupee)),
                 ],
               ),
               const SizedBox(height: 15),

@@ -21,6 +21,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
   List<String> _recentServiceLabels = [];
   double _totalServiceSpent = 0.0;
   int _daysUntilNextService = 0;
+  DateTime? _nextServiceDueDate;
 
   @override
   void initState() {
@@ -158,9 +159,11 @@ class _ServiceScreenState extends State<ServiceScreen> {
     if (records.isNotEmpty) {
       final mostRecent = records.last; // records are sorted by index ascending
       final dueDate = mostRecent.date.add(const Duration(days: 183));
+      _nextServiceDueDate = dueDate;
       final diff = dueDate.difference(DateTime.now()).inDays;
       _daysUntilNextService = diff > 0 ? diff : 0;
     } else {
+      _nextServiceDueDate = null;
       _daysUntilNextService = 0;
     }
   }
@@ -243,19 +246,30 @@ class _ServiceScreenState extends State<ServiceScreen> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
+                                    if (_nextServiceDueDate != null)
+                                      Text(
+                                        DateFormat('dd MMM yyyy').format(_nextServiceDueDate!),
+                                        style: const TextStyle(
+                                            color: kPrimaryColor,
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold),
+                                      )
+                                    else
+                                      const Text(
+                                        'No records',
+                                        style: TextStyle(
+                                            color: kPrimaryColor,
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    const SizedBox(height: 4),
                                     Text(
                                       _daysUntilNextService > 0
-                                          ? '$_daysUntilNextService days'
+                                          ? '${_daysUntilNextService} days remaining'
                                           : 'Due now',
                                       style: const TextStyle(
-                                          color: kPrimaryColor,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold),
+                                          color: kSubTextColor, fontSize: 12),
                                     ),
-                                    const SizedBox(height: 4),
-                                    const Text('183 days interval',
-                                        style:
-                                            TextStyle(color: kSubTextColor, fontSize: 12)),
                                   ],
                                 ),
                               ],
@@ -647,7 +661,7 @@ class __AddServiceDialogState extends State<_AddServiceDialog> {
             _buildInputField(
                 _odometerController, "Odometer Reading (km)", Icons.speed),
             const SizedBox(height: 15),
-            _buildInputField(_costController, "Cost (Rs)", Icons.attach_money),
+            _buildInputField(_costController, "Cost", Icons.currency_rupee),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,

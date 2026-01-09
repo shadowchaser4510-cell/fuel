@@ -295,17 +295,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         const SizedBox(height: 24),
 
+                        // Two tiles side by side: Last Refueling (1 number) and Last Mileage (2 numbers)
                         Row(
                           children: [
+                            // Left tile: Last Refueling (flex 1)
                             Expanded(
-                                flex: 1,
-                                child: _buildSummaryCard(
-                                    "Last Refueling", _daysSinceLastRefuel)),
+                              flex: 1,
+                              child: _buildSummaryCard(
+                                  "Last Refueling", _daysSinceLastRefuel),
+                            ),
                             const SizedBox(width: 15),
+                            // Right tile: Last Mileage (flex 2)
                             Expanded(
-                                flex: 2,
-                                child: _buildSummaryCard(
-                                    "Last Mileage", _lastMileage)),
+                              flex: 2,
+                              child: _buildMileageCard(_lastMileage),
+                            ),
                           ],
                         ),
 
@@ -347,7 +351,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Summary Card showing a large number and a small unit/label below
   Widget _buildSummaryCard(String title, String value) {
-    // Support multiline values where second line is additional small info
     String mainText = value;
     String subText = '';
 
@@ -360,18 +363,11 @@ class _HomeScreenState extends State<HomeScreen> {
         final parts = value.split(' ');
         mainText = parts.first;
         subText = parts.sublist(1).join(' ');
-      } else if (title == 'Last Mileage' && value.endsWith(' km')) {
-        mainText = value.replaceAll(' km', '');
-        subText = 'km';
-      } else if (value.contains(' ')) {
-        final parts = value.split(' ');
-        mainText = parts.first;
-        subText = parts.sublist(1).join(' ');
       }
     }
 
     return CustomCard(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -382,28 +378,132 @@ class _HomeScreenState extends State<HomeScreen> {
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.2)),
-          const SizedBox(height: 8),
-
-          // Big number (responsive)
+          const SizedBox(height: 16),
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Column(
               children: [
                 Text(mainText,
                     style: const TextStyle(
-                        fontSize: 56,
+                        fontSize: 48,
                         fontWeight: FontWeight.w900,
-                        color: kTextColor)),
+                        color: kTextColor,
+                        height: 1)),
                 if (subText.isNotEmpty) ...[
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Text(subText,
                       style: const TextStyle(
                           color: kSubTextColor,
-                          fontSize: 14,
+                          fontSize: 13,
                           fontWeight: FontWeight.bold)),
                 ]
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMileageCard(String value) {
+    String mileageNum = 'N/A';
+    String mileageUnit = '';
+    String rupeesNum = 'N/A';
+    String rupeesUnit = '';
+
+    if (value != 'N/A' && value.contains('\n')) {
+      final parts = value.split('\n');
+      if (parts.isNotEmpty && parts[0].isNotEmpty) {
+        final mileageParts = parts[0].split(' ');
+        if (mileageParts.isNotEmpty) {
+          mileageNum = mileageParts[0];
+          mileageUnit = mileageParts.length > 1 ? mileageParts.sublist(1).join(' ') : 'km/L';
+        }
+      }
+      if (parts.length > 1 && parts[1].isNotEmpty) {
+        final rupeesParts = parts[1].split('₹');
+        if (rupeesParts.length > 1) {
+          final amountAndUnit = rupeesParts[1].trim();
+          final unitIndex = amountAndUnit.indexOf('/');
+          if (unitIndex > 0) {
+            rupeesNum = amountAndUnit.substring(0, unitIndex).trim();
+            rupeesUnit = amountAndUnit.substring(unitIndex).trim();
+          } else {
+            rupeesNum = amountAndUnit;
+          }
+        }
+      }
+    } else if (value != 'N/A') {
+      mileageNum = value;
+    }
+
+    return CustomCard(
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text('LAST MILEAGE',
+              style: TextStyle(
+                  color: kSubTextColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2)),
+          const SizedBox(height: 16),
+          // All three metrics in a row: km/L on left, rupees/km on right (with rupee symbol)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Left: km/L
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(mileageNum,
+                          style: const TextStyle(
+                              fontSize: 48,
+                              fontWeight: FontWeight.w900,
+                              color: kTextColor,
+                              height: 1)),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(mileageUnit,
+                        style: const TextStyle(
+                            color: kSubTextColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              // Right: ₹/km
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(rupeesNum,
+                          style: const TextStyle(
+                              fontSize: 42,
+                              fontWeight: FontWeight.w900,
+                              color: kTextColor,
+                              height: 1)),
+                    ),
+                    const SizedBox(height: 8),
+                    Text('${rupeesUnit}₹',
+                        style: const TextStyle(
+                            color: kSubTextColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

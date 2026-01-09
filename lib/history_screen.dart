@@ -82,7 +82,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       const SizedBox(height: 8),
                       Text('Cost: ₹${record.cost.toStringAsFixed(2)}', style: const TextStyle(color: kSubTextColor)),
                     ]),
-                    actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close', style: TextStyle(color: kPrimaryColor)))],
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _editServiceRecord(record, actualIndex);
+                        },
+                        child: const Text('Edit', style: TextStyle(color: kPrimaryColor)),
+                      ),
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close', style: TextStyle(color: kSubTextColor)))
+                    ],
                   ));
         },
         child: CustomCard(
@@ -194,6 +203,34 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
+  Future<void> _editServiceRecord(ServiceRecord record, int index) async {
+    final result = await showDialog<ServiceRecord>(
+      context: context,
+      builder: (ctx) => _EditServiceRecordDialog(record: record),
+    );
+
+    if (result != null) {
+      try {
+        await _apiService.updateServiceRecord(result);
+        setState(() => _serviceRecords[index] = result);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Service record updated'), backgroundColor: Colors.green),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Error updating record: $e'),
+                backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
+  }
+
   Future<void> _onRefresh() async {
     await _loadData();
   }
@@ -276,6 +313,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   void _showExportOptions() {
+    final isService = _viewMode == 'service';
+    final title = isService ? 'Export Service Records' : 'Export Fuel Logs';
+    
     showModalBottomSheet(
       context: context,
       backgroundColor: kCardColor,
@@ -284,8 +324,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Export Fuel Logs',
-                style: TextStyle(
+            Text(title,
+                style: const TextStyle(
                     color: kTextColor,
                     fontSize: 16,
                     fontWeight: FontWeight.bold)),
@@ -296,7 +336,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               trailing: const Icon(Icons.file_download, color: kPrimaryColor),
               onTap: () {
                 Navigator.pop(ctx);
-                _exportLogs('json', null);
+                _exportLogs('json', '/storage/emulated/0/Download');
               },
             ),
             ListTile(
@@ -305,56 +345,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               trailing: const Icon(Icons.file_download, color: kPrimaryColor),
               onTap: () {
                 Navigator.pop(ctx);
-                _exportLogs('csv', null);
-              },
-            ),
-            const Divider(color: kSubTextColor),
-            const Text('Or choose a destination folder:',
-                style: TextStyle(color: kSubTextColor, fontSize: 12)),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.folder),
-                    label: const Text('Downloads'),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimaryColor),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      _showFormatAndExport('/storage/emulated/0/Download');
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showFormatAndExport(String destinationPath) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: kCardColor,
-        title: const Text('Select Format', style: TextStyle(color: kTextColor)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('JSON', style: TextStyle(color: kTextColor)),
-              onTap: () {
-                Navigator.pop(ctx);
-                _exportLogs('json', destinationPath);
-              },
-            ),
-            ListTile(
-              title: const Text('CSV', style: TextStyle(color: kTextColor)),
-              onTap: () {
-                Navigator.pop(ctx);
-                _exportLogs('csv', destinationPath);
+                _exportLogs('csv', '/storage/emulated/0/Download');
               },
             ),
           ],
@@ -366,10 +357,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Future<void> _exportLogs(String format, String? customDir) async {
     try {
       String? path;
-      if (format == 'json') {
-        path = await _apiService.exportFuelLogsAsJson(customDir: customDir);
+      final isService = _viewMode == 'service';
+      
+      if (isService) {
+        if (format == 'json') {
+          path = await _apiService.exportServiceRecordsAsJson(customDir: customDir);
+        } else {
+          path = await _apiService.exportServiceRecordsAsCsv(customDir: customDir);
+        }
       } else {
-        path = await _apiService.exportFuelLogsAsCsv(customDir: customDir);
+        if (format == 'json') {
+          path = await _apiService.exportFuelLogsAsJson(customDir: customDir);
+        } else {
+          path = await _apiService.exportFuelLogsAsCsv(customDir: customDir);
+        }
       }
 
       if (mounted) {
@@ -417,10 +418,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    icon: const Icon(Icons.upload_file),
-                    label: const Text('Choose CSV File'),
+                    icon: const Icon(Icons.upload_file, color: Colors.white),
+                    label: const Text('Choose CSV File',
+                        style: TextStyle(color: Colors.white, fontSize: 16)),
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimaryColor),
+                        backgroundColor: kPrimaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 12)),
                     onPressed: () async {
                       Navigator.pop(ctx);
                       await _importFromCsv();
@@ -437,9 +440,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Future<void> _importFromCsv() async {
     try {
+      // Set default path to Downloads folder
+      String? initialDirectory;
+      if (Platform.isAndroid) {
+        initialDirectory = '/storage/emulated/0/Download';
+      } else if (Platform.isIOS) {
+        initialDirectory = null; // iOS handles it differently
+      } else if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+        final homeDir = Platform.environment['HOME'] ?? '';
+        initialDirectory = '$homeDir/Downloads';
+      }
+      
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['csv'],
+        initialDirectory: initialDirectory,
       );
       if (result == null || result.files.isEmpty) return;
       final file = result.files.first;
@@ -808,6 +823,121 @@ class __EditLogDialogState extends State<_EditLogDialog> {
             ),
           ],
         ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel', style: TextStyle(color: kSubTextColor)),
+        ),
+        TextButton(
+          onPressed: _save,
+          child: const Text('Save', style: TextStyle(color: kPrimaryColor)),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditServiceRecordDialog extends StatefulWidget {
+  final ServiceRecord record;
+
+  const _EditServiceRecordDialog({required this.record});
+
+  @override
+  State<_EditServiceRecordDialog> createState() =>
+      _EditServiceRecordDialogState();
+}
+
+class _EditServiceRecordDialogState extends State<_EditServiceRecordDialog> {
+  late TextEditingController _dateController;
+  late TextEditingController _odometerController;
+  late TextEditingController _costController;
+
+  @override
+  void initState() {
+    super.initState();
+    _dateController = TextEditingController(
+        text: DateFormat('yyyy-MM-dd').format(widget.record.date));
+    _odometerController =
+        TextEditingController(text: widget.record.odometer.toString());
+    _costController =
+        TextEditingController(text: widget.record.cost.toStringAsFixed(2));
+  }
+
+  @override
+  void dispose() {
+    _dateController.dispose();
+    _odometerController.dispose();
+    _costController.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    try {
+      final date = DateFormat('yyyy-MM-dd').parse(_dateController.text);
+      final record = ServiceRecord(
+        date: date,
+        odometer: int.parse(_odometerController.text),
+        cost: double.parse(_costController.text),
+        index: widget.record.index,
+      );
+      Navigator.pop(context, record);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: kCardColor,
+      title: const Text('Edit Service Record', style: TextStyle(color: kTextColor)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _dateController,
+            style: const TextStyle(color: kTextColor),
+            decoration: InputDecoration(
+              labelText: 'Date (yyyy-MM-dd)',
+              labelStyle: const TextStyle(color: kSubTextColor),
+              filled: true,
+              fillColor: kBackgroundColor,
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _odometerController,
+            style: const TextStyle(color: kTextColor),
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: 'Odometer (km)',
+              labelStyle: const TextStyle(color: kSubTextColor),
+              filled: true,
+              fillColor: kBackgroundColor,
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _costController,
+            style: const TextStyle(color: kTextColor),
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: 'Cost (₹)',
+              labelStyle: const TextStyle(color: kSubTextColor),
+              filled: true,
+              fillColor: kBackgroundColor,
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
       ),
       actions: [
         TextButton(
