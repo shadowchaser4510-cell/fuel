@@ -5,7 +5,8 @@ import 'package:sembast/sembast_io.dart';
 
 void main() async {
   // Open the runtime DB location
-  final dir = Directory(p.join(Directory.systemTemp.path, 'fuel_app', '.sembast_data'));
+  final dir =
+      Directory(p.join(Directory.systemTemp.path, 'fuel_app', '.sembast_data'));
   if (!await dir.exists()) {
     print('DB directory does not exist. Nothing to clean.');
     return;

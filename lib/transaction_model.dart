@@ -28,8 +28,12 @@ class FuelLog {
 
     // Map format: { 'date': ..., 'odometer': ..., ... }
     if (json is Map) {
-      final dateVal = json['date'] ?? json['Date'] ?? json['timestamp'] ?? json['Timestamp'];
-      final odometerVal = json['odometer'] ?? json['Odometer'] ?? json['odometer_km'];
+      final dateVal = json['date'] ??
+          json['Date'] ??
+          json['timestamp'] ??
+          json['Timestamp'];
+      final odometerVal =
+          json['odometer'] ?? json['Odometer'] ?? json['odometer_km'];
       final litersVal = json['liters'] ?? json['Liters'] ?? json['fuel_liters'];
       final costVal = json['cost'] ?? json['Cost'] ?? json['amount'];
       final isFullVal = json['isFull'] ?? json['is_full'] ?? json['FullTank'];
@@ -73,11 +77,15 @@ class ServiceRecord {
     if (json is Map) {
       return ServiceRecord(
         date: DateTime.parse(json['date'] ?? json['Date'] ?? ''),
-        odometer: int.parse(json['odometer']?.toString() ?? json['Odometer']?.toString() ?? '0'),
-        cost: double.parse(json['cost']?.toString() ?? json['Cost']?.toString() ?? '0'),
+        odometer: int.parse(json['odometer']?.toString() ??
+            json['Odometer']?.toString() ??
+            '0'),
+        cost: double.parse(
+            json['cost']?.toString() ?? json['Cost']?.toString() ?? '0'),
       );
     }
-    throw Exception('Unsupported ServiceRecord json format: ${json.runtimeType}');
+    throw Exception(
+        'Unsupported ServiceRecord json format: ${json.runtimeType}');
   }
 
   Map<String, dynamic> toJson() {

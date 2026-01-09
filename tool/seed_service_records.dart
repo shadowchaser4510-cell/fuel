@@ -3,7 +3,8 @@ import 'package:path/path.dart' as p;
 import 'package:sembast/sembast_io.dart';
 
 void main() async {
-  final dir = Directory(p.join(Directory.systemTemp.path, 'fuel_app', '.sembast_data'));
+  final dir =
+      Directory(p.join(Directory.systemTemp.path, 'fuel_app', '.sembast_data'));
   if (!await dir.exists()) await dir.create(recursive: true);
 
   final dbPath = p.join(dir.path, 'fuel.db');

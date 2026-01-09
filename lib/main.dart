@@ -79,7 +79,9 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          HomeScreen(key: ValueKey(_homeReloadToken), onNavigateToAnalysis: () => _onItemTapped(1)),
+          HomeScreen(
+              key: ValueKey(_homeReloadToken),
+              onNavigateToAnalysis: () => _onItemTapped(1)),
           const AnalysisScreen(),
           const ServiceScreen(),
           const HistoryScreen(),

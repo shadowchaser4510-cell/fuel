@@ -16,7 +16,8 @@ class GradientLineChart extends StatelessWidget {
   final List<double> dataPoints;
   final double height;
 
-  const GradientLineChart({super.key, required this.dataPoints, this.height = 60});
+  const GradientLineChart(
+      {super.key, required this.dataPoints, this.height = 60});
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +42,10 @@ class _GradientLineChartPainter extends CustomPainter {
 
     final paint = Paint()
       ..shader = LinearGradient(
-        colors: [kPrimaryColor.withOpacity(0.8), kSecondaryColor.withOpacity(0.2)],
+        colors: [
+          kPrimaryColor.withOpacity(0.8),
+          kSecondaryColor.withOpacity(0.2)
+        ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
@@ -51,7 +55,10 @@ class _GradientLineChartPainter extends CustomPainter {
 
     final fillPaint = Paint()
       ..shader = LinearGradient(
-        colors: [kPrimaryColor.withOpacity(0.25), kSecondaryColor.withOpacity(0.0)],
+        colors: [
+          kPrimaryColor.withOpacity(0.25),
+          kSecondaryColor.withOpacity(0.0)
+        ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
@@ -63,13 +70,16 @@ class _GradientLineChartPainter extends CustomPainter {
     double maxY = dataPoints.reduce((a, b) => a > b ? a : b);
     double minY = dataPoints.reduce((a, b) => a < b ? a : b);
     double rangeY = maxY - minY;
-    if (rangeY == 0) rangeY = maxY == 0 ? 1 : maxY; // Avoid division by zero when all values equal
+    if (rangeY == 0)
+      rangeY =
+          maxY == 0 ? 1 : maxY; // Avoid division by zero when all values equal
 
     const double topPadding = 8.0;
     const double bottomPadding = 8.0;
     final double availHeight = size.height - topPadding - bottomPadding;
 
-    double xStep = dataPoints.length == 1 ? 0 : size.width / (dataPoints.length - 1);
+    double xStep =
+        dataPoints.length == 1 ? 0 : size.width / (dataPoints.length - 1);
 
     // Keep track of the computed points so we can draw markers and labels
     final List<Offset> points = [];
@@ -120,17 +130,22 @@ class _GradientLineChartPainter extends CustomPainter {
       // Draw value label above point (if value > 0 or small number of points)
       if (dataPoints[i] > 0 || dataPoints.length <= 6) {
         final tp = TextPainter(
-          text: TextSpan(text: dataPoints[i].toStringAsFixed(dataPoints[i] % 1 == 0 ? 0 : 1), style: textStyle),
+          text: TextSpan(
+              text:
+                  dataPoints[i].toStringAsFixed(dataPoints[i] % 1 == 0 ? 0 : 1),
+              style: textStyle),
           textDirection: ui.TextDirection.ltr,
         );
         tp.layout();
-        tp.paint(canvas, Offset(p.dx - tp.width / 2, p.dy - markerRadius - tp.height - 2));
+        tp.paint(canvas,
+            Offset(p.dx - tp.width / 2, p.dy - markerRadius - tp.height - 2));
       }
     }
   }
 
   @override
-  bool shouldRepaint(covariant _GradientLineChartPainter oldDelegate) => !listEquals(oldDelegate.dataPoints, dataPoints);
+  bool shouldRepaint(covariant _GradientLineChartPainter oldDelegate) =>
+      !listEquals(oldDelegate.dataPoints, dataPoints);
 }
 
 // --- BAR CHART ---
@@ -139,11 +154,16 @@ class BarChart extends StatelessWidget {
   final List<String> labels;
   final double height;
 
-  const BarChart({super.key, required this.dataPoints, required this.labels, this.height = 150});
+  const BarChart(
+      {super.key,
+      required this.dataPoints,
+      required this.labels,
+      this.height = 150});
 
   @override
   Widget build(BuildContext context) {
-    double maxY = dataPoints.isEmpty ? 1 : dataPoints.reduce((a, b) => a > b ? a : b);
+    double maxY =
+        dataPoints.isEmpty ? 1 : dataPoints.reduce((a, b) => a > b ? a : b);
 
     // Calculate responsive layout values
     // screen width available if needed for responsive calculations
@@ -161,8 +181,11 @@ class BarChart extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text(NumberFormat.currency(symbol: '\$', decimalDigits: 0).format(dataPoints[index]),
-                          style: const TextStyle(color: kSubTextColor, fontSize: 10)),
+                      Text(
+                          NumberFormat.currency(symbol: '\$', decimalDigits: 0)
+                              .format(dataPoints[index]),
+                          style: const TextStyle(
+                              color: kSubTextColor, fontSize: 10)),
                       const SizedBox(height: 8),
                       Container(
                         width: 24,
@@ -186,7 +209,9 @@ class BarChart extends StatelessWidget {
           Row(
             children: List.generate(labels.length, (index) {
               return Expanded(
-                child: Text(labels[index], style: const TextStyle(color: kSubTextColor, fontSize: 10), textAlign: TextAlign.center),
+                child: Text(labels[index],
+                    style: const TextStyle(color: kSubTextColor, fontSize: 10),
+                    textAlign: TextAlign.center),
               );
             }),
           ),
@@ -245,7 +270,10 @@ class CustomBottomNavigationBar extends StatelessWidget {
         color: kCardColor,
         borderRadius: BorderRadius.circular(38),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.45), blurRadius: 18, offset: const Offset(0, 8)),
+          BoxShadow(
+              color: Colors.black.withOpacity(0.45),
+              blurRadius: 18,
+              offset: const Offset(0, 8)),
         ],
       ),
       child: Row(
@@ -266,7 +294,9 @@ class CustomBottomNavigationBar extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: selectedIndex == index ? kPrimaryColor.withOpacity(0.1) : Colors.transparent,
+          color: selectedIndex == index
+              ? kPrimaryColor.withOpacity(0.1)
+              : Colors.transparent,
           shape: BoxShape.circle,
         ),
         child: Icon(

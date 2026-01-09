@@ -85,16 +85,20 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-
   Future<void> _loadCarImage() async {
-    const url = 'https://cdni.autocarindia.com/Utils/ImageResizer.ashx?n=https://cdni.autocarindia.com/ExtraImages/20230904011632_Nexon_facelift_front.jpg&w=700&c=1';
+    const url =
+        'https://cdni.autocarindia.com/Utils/ImageResizer.ashx?n=https://cdni.autocarindia.com/ExtraImages/20230904011632_Nexon_facelift_front.jpg&w=700&c=1';
     try {
       final res = await http.get(Uri.parse(url));
       if (res.statusCode == 200 && res.bodyBytes.isNotEmpty) {
         try {
           // Try to instantiate codec to ensure bytes are valid image data
           await ui.instantiateImageCodec(res.bodyBytes);
-          if (mounted) setState(() { _carImageBytes = res.bodyBytes; _carImageLoading = false; });
+          if (mounted)
+            setState(() {
+              _carImageBytes = res.bodyBytes;
+              _carImageLoading = false;
+            });
           return;
         } catch (e) {
           debugPrint('Car image decode failed: $e');
@@ -104,7 +108,11 @@ class _HomeScreenState extends State<HomeScreen> {
       debugPrint('Car image fetch failed: $e');
     }
 
-    if (mounted) setState(() { _carImageBytes = null; _carImageLoading = false; });
+    if (mounted)
+      setState(() {
+        _carImageBytes = null;
+        _carImageLoading = false;
+      });
   }
 
   @override
@@ -128,7 +136,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: SafeArea(
           child: _isLoading
-              ? const Center(child: CircularProgressIndicator(color: kPrimaryColor))
+              ? const Center(
+                  child: CircularProgressIndicator(color: kPrimaryColor))
               : Padding(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                   child: SingleChildScrollView(
@@ -144,7 +153,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: CircleAvatar(
                               radius: 14,
                               backgroundColor: Color(0x33000000),
-                              child: Icon(Icons.radio_button_checked, size: 14, color: Colors.white),
+                              child: Icon(Icons.radio_button_checked,
+                                  size: 14, color: Colors.white),
                             ),
                           ),
                         ),
@@ -153,7 +163,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            IconButton(onPressed: () {}, icon: const Icon(Icons.menu, color: kTextColor)),
+                            IconButton(
+                                onPressed: () {},
+                                icon:
+                                    const Icon(Icons.menu, color: kTextColor)),
                           ],
                         ),
 
@@ -170,16 +183,25 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Expanded(
                                       flex: 6,
                                       child: Padding(
-                                        padding: EdgeInsets.only(left: 8.0, top: 12),
+                                        padding:
+                                            EdgeInsets.only(left: 8.0, top: 12),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
                                           children: [
                                             SizedBox(height: 8),
                                             Text("Tata Nexon",
-                                                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: kTextColor)),
+                                                style: TextStyle(
+                                                    fontSize: 30,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: kTextColor)),
                                             SizedBox(height: 6),
-                                            Text("HR35W0241", style: TextStyle(fontSize: 14, color: kSubTextColor)),
+                                            Text("HR35W0241",
+                                                style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: kSubTextColor)),
                                           ],
                                         ),
                                       ),
@@ -188,44 +210,67 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ],
                                 ),
                               ),
-
                               Positioned(
                                 right: 0,
                                 top: 20,
                                 bottom: 20,
                                 width: MediaQuery.of(context).size.width * 0.62,
                                 child: Container(
-                                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 20, offset: Offset(0, 8))]),
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: const [
+                                        BoxShadow(
+                                            color: Colors.black54,
+                                            blurRadius: 20,
+                                            offset: Offset(0, 8))
+                                      ]),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(20),
-                                    child: Stack(fit: StackFit.expand, children: [
-                                    if (_carImageLoading)
-                                      const Center(child: CircularProgressIndicator(color: kPrimaryColor))
-                                    else if (_carImageBytes != null)
-                                      Image.memory(
-                                        _carImageBytes!,
-                                        fit: BoxFit.cover,
-                                        alignment: Alignment.topRight,
-                                      )
-                                    else
-                                      // Fallback placeholder when image failed to load
-                                      Container(
-                                        color: kCardColor,
-                                        child: const Center(
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(Icons.directions_car, size: 80, color: kSubTextColor),
-                                              SizedBox(height: 8),
-                                              Text('Car image', style: TextStyle(color: kSubTextColor)),
-                                            ],
+                                    child:
+                                        Stack(fit: StackFit.expand, children: [
+                                      if (_carImageLoading)
+                                        const Center(
+                                            child: CircularProgressIndicator(
+                                                color: kPrimaryColor))
+                                      else if (_carImageBytes != null)
+                                        Image.memory(
+                                          _carImageBytes!,
+                                          fit: BoxFit.cover,
+                                          alignment: Alignment.topRight,
+                                        )
+                                      else
+                                        // Fallback placeholder when image failed to load
+                                        Container(
+                                          color: kCardColor,
+                                          child: const Center(
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.directions_car,
+                                                    size: 80,
+                                                    color: kSubTextColor),
+                                                SizedBox(height: 8),
+                                                Text('Car image',
+                                                    style: TextStyle(
+                                                        color: kSubTextColor)),
+                                              ],
+                                            ),
                                           ),
                                         ),
-                                      ),
                                       Positioned.fill(
                                           child: DecoratedBox(
                                               decoration: BoxDecoration(
-                                        gradient: LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, colors: [Colors.black.withOpacity(0.55), Colors.transparent], stops: const [0.0, 0.45]),
+                                        gradient: LinearGradient(
+                                            begin: Alignment.centerLeft,
+                                            end: Alignment.centerRight,
+                                            colors: [
+                                              Colors.black.withOpacity(0.55),
+                                              Colors.transparent
+                                            ],
+                                            stops: const [
+                                              0.0,
+                                              0.45
+                                            ]),
                                       ))),
                                     ]),
                                   ),
@@ -239,24 +284,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         Row(
                           children: [
-                            Expanded(child: _buildSummaryCard("Last Refueling", _daysSinceLastRefuel)),
+                            Expanded(
+                                child: _buildSummaryCard(
+                                    "Last Refueling", _daysSinceLastRefuel)),
                             const SizedBox(width: 15),
-                            Expanded(child: _buildSummaryCard("Last Mileage", _lastMileage)),
+                            Expanded(
+                                child: _buildSummaryCard(
+                                    "Last Mileage", _lastMileage)),
                           ],
                         ),
 
                         const SizedBox(height: 18),
 
-                        const Center(child: Text('Tap the + button to log a refueling', style: TextStyle(color: kSubTextColor, fontSize: 12))),
+                        const Center(
+                            child: Text('Tap the + button to log a refueling',
+                                style: TextStyle(
+                                    color: kSubTextColor, fontSize: 12))),
 
-                        SizedBox(height: MediaQuery.of(context).padding.bottom + 140),
+                        SizedBox(
+                            height:
+                                MediaQuery.of(context).padding.bottom + 140),
                       ],
                     ),
                   ),
                 ),
         ),
       ),
-
     );
   }
 
@@ -305,7 +358,11 @@ class _HomeScreenState extends State<HomeScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(title.toUpperCase(),
-              style: const TextStyle(color: kSubTextColor, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+              style: const TextStyle(
+                  color: kSubTextColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2)),
           const SizedBox(height: 8),
 
           // Big number (responsive)
@@ -313,10 +370,18 @@ class _HomeScreenState extends State<HomeScreen> {
             fit: BoxFit.scaleDown,
             child: Column(
               children: [
-                Text(mainText, style: const TextStyle(fontSize: 56, fontWeight: FontWeight.w900, color: kTextColor)),
+                Text(mainText,
+                    style: const TextStyle(
+                        fontSize: 56,
+                        fontWeight: FontWeight.w900,
+                        color: kTextColor)),
                 if (subText.isNotEmpty) ...[
                   const SizedBox(height: 6),
-                  Text(subText, style: const TextStyle(color: kSubTextColor, fontSize: 14, fontWeight: FontWeight.bold)),
+                  Text(subText,
+                      style: const TextStyle(
+                          color: kSubTextColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold)),
                 ]
               ],
             ),

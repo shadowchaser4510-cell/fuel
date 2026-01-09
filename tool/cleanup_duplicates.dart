@@ -3,7 +3,8 @@ import 'package:path/path.dart' as p;
 import 'package:sembast/sembast_io.dart';
 
 void main() async {
-  final dir = Directory(p.join(Directory.systemTemp.path, 'fuel_app', '.sembast_data'));
+  final dir =
+      Directory(p.join(Directory.systemTemp.path, 'fuel_app', '.sembast_data'));
   if (!await dir.exists()) {
     print('DB directory does not exist.');
     return;
@@ -41,7 +42,7 @@ void main() async {
           final dateB = DateTime.parse(jsonB['date'] as String);
           return dateA.compareTo(dateB);
         });
-        
+
         for (int i = 1; i < odometerGroup.length; i++) {
           await fuelStore.record(odometerGroup[i].key as int).delete(db);
           deletedCount++;
@@ -50,7 +51,8 @@ void main() async {
     }
 
     final fuelRecordsAfter = await fuelStore.find(db);
-    print('Fuel logs after dedup: ${fuelRecordsAfter.length} (deleted $deletedCount)');
+    print(
+        'Fuel logs after dedup: ${fuelRecordsAfter.length} (deleted $deletedCount)');
 
     // Check service records
     final serviceRecords = await serviceStore.find(db);

@@ -47,7 +47,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading logs: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('Error loading logs: $e'),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -71,20 +73,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
         setState(() => _logs[index] = result);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Log updated'), backgroundColor: Colors.green),
+            const SnackBar(
+                content: Text('Log updated'), backgroundColor: Colors.green),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error updating log: $e'), backgroundColor: Colors.red),
+            SnackBar(
+                content: Text('Error updating log: $e'),
+                backgroundColor: Colors.red),
           );
         }
       }
     }
   }
-
-
 
   Future<void> _onRefresh() async {
     await _loadLogs();
@@ -96,7 +99,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       backgroundColor: kBackgroundColor,
       appBar: AppBar(
         backgroundColor: kBackgroundColor,
-        title: const Text('Fuel Log History', style: TextStyle(color: Colors.white)),
+        title: const Text('Fuel Log History',
+            style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
@@ -119,7 +123,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
               onRefresh: _onRefresh,
               child: _logs.isEmpty
                   ? const Center(
-                      child: Text('No fuel logs yet', style: TextStyle(color: kSubTextColor, fontSize: 16)),
+                      child: Text('No fuel logs yet',
+                          style: TextStyle(color: kSubTextColor, fontSize: 16)),
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
@@ -142,10 +147,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Export Fuel Logs', style: TextStyle(color: kTextColor, fontSize: 16, fontWeight: FontWeight.bold)),
+            const Text('Export Fuel Logs',
+                style: TextStyle(
+                    color: kTextColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             ListTile(
-              title: const Text('Export as JSON', style: TextStyle(color: kTextColor)),
+              title: const Text('Export as JSON',
+                  style: TextStyle(color: kTextColor)),
               trailing: const Icon(Icons.file_download, color: kPrimaryColor),
               onTap: () {
                 Navigator.pop(ctx);
@@ -153,7 +163,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
               },
             ),
             ListTile(
-              title: const Text('Export as CSV', style: TextStyle(color: kTextColor)),
+              title: const Text('Export as CSV',
+                  style: TextStyle(color: kTextColor)),
               trailing: const Icon(Icons.file_download, color: kPrimaryColor),
               onTap: () {
                 Navigator.pop(ctx);
@@ -161,7 +172,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
               },
             ),
             const Divider(color: kSubTextColor),
-            const Text('Or choose a destination folder:', style: TextStyle(color: kSubTextColor, fontSize: 12)),
+            const Text('Or choose a destination folder:',
+                style: TextStyle(color: kSubTextColor, fontSize: 12)),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -169,7 +181,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   child: ElevatedButton.icon(
                     icon: const Icon(Icons.folder),
                     label: const Text('Downloads'),
-                    style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: kPrimaryColor),
                     onPressed: () {
                       Navigator.pop(ctx);
                       _showFormatAndExport('/storage/emulated/0/Download');
@@ -253,9 +266,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Import Fuel Logs (CSV)', style: TextStyle(color: kTextColor, fontSize: 16, fontWeight: FontWeight.bold)),
+            const Text('Import Fuel Logs (CSV)',
+                style: TextStyle(
+                    color: kTextColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            const Text('CSV format (header required): date,odometer,liters,cost,isFull\nDate format: YYYY-MM-DD\nExample: 2025-12-31,12345,35.7,4300,true', style: TextStyle(color: kSubTextColor)),
+            const Text(
+                'CSV format (header required): date,odometer,liters,cost,isFull\nDate format: YYYY-MM-DD\nExample: 2025-12-31,12345,35.7,4300,true',
+                style: TextStyle(color: kSubTextColor)),
             const SizedBox(height: 16),
             Row(
               children: [
@@ -263,7 +282,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   child: ElevatedButton.icon(
                     icon: const Icon(Icons.upload_file),
                     label: const Text('Choose CSV File'),
-                    style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: kPrimaryColor),
                     onPressed: () async {
                       Navigator.pop(ctx);
                       await _importFromCsv();
@@ -286,18 +306,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
       );
       if (result == null || result.files.isEmpty) return;
       final file = result.files.first;
-      final content = String.fromCharCodes(file.bytes ?? await File(file.path!).readAsBytes());
+      final content = String.fromCharCodes(
+          file.bytes ?? await File(file.path!).readAsBytes());
       final imported = await _apiService.importFuelLogsFromCsv(content);
       await _loadLogs();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Imported $imported rows'), backgroundColor: Colors.green),
+          SnackBar(
+              content: Text('Imported $imported rows'),
+              backgroundColor: Colors.green),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Import failed: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('Import failed: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -307,7 +331,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     // Calculate mileage if possible
     String mileageStr = 'N/A';
     if (index < _logs.length - 1) {
-      final prevLog = _logs[index + 1]; // Next item in descending order = previous in time
+      final prevLog =
+          _logs[index + 1]; // Next item in descending order = previous in time
       final distance = log.odometer - prevLog.odometer;
       if (distance > 0 && log.liters > 0) {
         final mileage = distance / log.liters;
@@ -324,16 +349,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
           context: context,
           builder: (ctx) => AlertDialog(
             backgroundColor: kCardColor,
-            title: const Text('Delete Log', style: TextStyle(color: kTextColor)),
-            content: const Text('Are you sure you want to delete this log?', style: TextStyle(color: kSubTextColor)),
+            title:
+                const Text('Delete Log', style: TextStyle(color: kTextColor)),
+            content: const Text('Are you sure you want to delete this log?',
+                style: TextStyle(color: kSubTextColor)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel', style: TextStyle(color: kSubTextColor)),
+                child: const Text('Cancel',
+                    style: TextStyle(color: kSubTextColor)),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                child:
+                    const Text('Delete', style: TextStyle(color: Colors.red)),
               ),
             ],
           ),
@@ -344,14 +373,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
             if (mounted) {
               setState(() => _logs.removeAt(index));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Log deleted'), backgroundColor: Colors.green),
+                const SnackBar(
+                    content: Text('Log deleted'),
+                    backgroundColor: Colors.green),
               );
             }
             return true; // Allow dismissal
           } catch (e) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error deleting log: $e'), backgroundColor: Colors.red),
+                SnackBar(
+                    content: Text('Error deleting log: $e'),
+                    backgroundColor: Colors.red),
               );
             }
             return false; // Don't dismiss on error
@@ -381,7 +414,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   children: [
                     Text(
                       DateFormat('EEE, MMM d, yyyy – h:mm a').format(log.date),
-                      style: const TextStyle(color: kTextColor, fontSize: 14, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          color: kTextColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 6),
                     Row(
@@ -389,14 +425,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         Expanded(
                           child: Text(
                             'Odometer: ${log.odometer} km',
-                            style: const TextStyle(color: kSubTextColor, fontSize: 12),
+                            style: const TextStyle(
+                                color: kSubTextColor, fontSize: 12),
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             'Liters: ${log.liters.toStringAsFixed(2)}',
-                            style: const TextStyle(color: kSubTextColor, fontSize: 12),
+                            style: const TextStyle(
+                                color: kSubTextColor, fontSize: 12),
                           ),
                         ),
                       ],
@@ -407,14 +445,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         Expanded(
                           child: Text(
                             'Cost: \$${log.cost.toStringAsFixed(2)}',
-                            style: const TextStyle(color: kSubTextColor, fontSize: 12),
+                            style: const TextStyle(
+                                color: kSubTextColor, fontSize: 12),
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             'Mileage: $mileageStr',
-                            style: const TextStyle(color: kPrimaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                                color: kPrimaryColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
@@ -423,14 +465,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       Padding(
                         padding: const EdgeInsets.only(top: 6),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: kPrimaryColor.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Text(
                             'Full Tank',
-                            style: TextStyle(color: kPrimaryColor, fontSize: 11, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                color: kPrimaryColor,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
@@ -465,9 +511,12 @@ class __EditLogDialogState extends State<_EditLogDialog> {
   @override
   void initState() {
     super.initState();
-    _dateController = TextEditingController(text: widget.log.date.toIso8601String());
-    _odometerController = TextEditingController(text: widget.log.odometer.toString());
-    _litersController = TextEditingController(text: widget.log.liters.toString());
+    _dateController =
+        TextEditingController(text: widget.log.date.toIso8601String());
+    _odometerController =
+        TextEditingController(text: widget.log.odometer.toString());
+    _litersController =
+        TextEditingController(text: widget.log.liters.toString());
     _costController = TextEditingController(text: widget.log.cost.toString());
     _isFullTank = widget.log.isFull;
   }
@@ -493,7 +542,8 @@ class __EditLogDialogState extends State<_EditLogDialog> {
       Navigator.pop(context, updatedLog);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid input: $e'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text('Invalid input: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -515,7 +565,8 @@ class __EditLogDialogState extends State<_EditLogDialog> {
                 labelStyle: const TextStyle(color: kSubTextColor),
                 filled: true,
                 fillColor: kBackgroundColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
             const SizedBox(height: 12),
@@ -528,7 +579,8 @@ class __EditLogDialogState extends State<_EditLogDialog> {
                 labelStyle: const TextStyle(color: kSubTextColor),
                 filled: true,
                 fillColor: kBackgroundColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
             const SizedBox(height: 12),
@@ -541,7 +593,8 @@ class __EditLogDialogState extends State<_EditLogDialog> {
                 labelStyle: const TextStyle(color: kSubTextColor),
                 filled: true,
                 fillColor: kBackgroundColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
             const SizedBox(height: 12),
@@ -554,12 +607,14 @@ class __EditLogDialogState extends State<_EditLogDialog> {
                 labelStyle: const TextStyle(color: kSubTextColor),
                 filled: true,
                 fillColor: kBackgroundColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
             const SizedBox(height: 12),
             CheckboxListTile(
-              title: const Text('Full Tank?', style: TextStyle(color: kTextColor)),
+              title:
+                  const Text('Full Tank?', style: TextStyle(color: kTextColor)),
               value: _isFullTank,
               onChanged: (val) => setState(() => _isFullTank = val ?? false),
               activeColor: kPrimaryColor,

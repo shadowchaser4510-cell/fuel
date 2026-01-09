@@ -21,7 +21,8 @@ final Map<String, int> _serviceKeyCache = {};
 Future<Database> _getDb() async {
   if (_db != null) return _db!;
   // Use system temp directory which is writable on Android
-  final dir = Directory(p.join(Directory.systemTemp.path, 'fuel_app', '.sembast_data'));
+  final dir =
+      Directory(p.join(Directory.systemTemp.path, 'fuel_app', '.sembast_data'));
   if (!await dir.exists()) await dir.create(recursive: true);
   final dbPath = p.join(dir.path, 'fuel.db');
   _db = await databaseFactoryIo.openDatabase(dbPath);
@@ -35,17 +36,20 @@ class ApiService {
     try {
       final db = await _getDb();
       final records = await _store.find(db);
-      final List<FuelLog> local = records.map((r) {
-        try {
-          // Cache the key for later updates
-          final json = Map<String, dynamic>.from(r.value);
-          _recordKeyCache[json['date'] as String? ?? ''] = r.key;
-          return FuelLog.fromJson(json);
-        } catch (err) {
-          debugPrint('Failed to parse local FuelLog: $err');
-          return null;
-        }
-      }).whereType<FuelLog>().toList();
+      final List<FuelLog> local = records
+          .map((r) {
+            try {
+              // Cache the key for later updates
+              final json = Map<String, dynamic>.from(r.value);
+              _recordKeyCache[json['date'] as String? ?? ''] = r.key;
+              return FuelLog.fromJson(json);
+            } catch (err) {
+              debugPrint('Failed to parse local FuelLog: $err');
+              return null;
+            }
+          })
+          .whereType<FuelLog>()
+          .toList();
       return local;
     } catch (e) {
       throw Exception('Error reading local storage: $e');
@@ -104,16 +108,19 @@ class ApiService {
     try {
       final db = await _getDb();
       final records = await _serviceStore.find(db);
-      final List<ServiceRecord> services = records.map((r) {
-        try {
-          final json = Map<String, dynamic>.from(r.value);
-          _serviceKeyCache[json['date'] as String? ?? ''] = r.key;
-          return ServiceRecord.fromJson(json);
-        } catch (err) {
-          debugPrint('Failed to parse ServiceRecord: $err');
-          return null;
-        }
-      }).whereType<ServiceRecord>().toList();
+      final List<ServiceRecord> services = records
+          .map((r) {
+            try {
+              final json = Map<String, dynamic>.from(r.value);
+              _serviceKeyCache[json['date'] as String? ?? ''] = r.key;
+              return ServiceRecord.fromJson(json);
+            } catch (err) {
+              debugPrint('Failed to parse ServiceRecord: $err');
+              return null;
+            }
+          })
+          .whereType<ServiceRecord>()
+          .toList();
       return services;
     } catch (e) {
       throw Exception('Error reading service records: $e');
@@ -168,7 +175,7 @@ class ApiService {
     try {
       final db = await _getDb();
       final records = await _store.find(db);
-      
+
       // Group logs by odometer
       final Map<int, List<RecordSnapshot>> byOdometer = {};
       for (final record in records) {
@@ -189,7 +196,7 @@ class ApiService {
             final dateB = DateTime.parse(jsonB['date'] as String);
             return dateA.compareTo(dateB);
           });
-          
+
           // Delete all but the first
           for (int i = 1; i < odometerGroup.length; i++) {
             await _store.record(odometerGroup[i].key as int).delete(db);
@@ -197,7 +204,7 @@ class ApiService {
           }
         }
       }
-      
+
       debugPrint('Deduplicated fuel logs: deleted $deletedCount duplicates');
       return deletedCount;
     } catch (e) {
@@ -211,12 +218,14 @@ class ApiService {
       final logs = await getFuelLogs();
       final jsonList = logs.map((log) => log.toJson()).toList();
       final jsonStr = json.encode(jsonList);
-      
-      final dirPath = customDir ?? p.join(Directory.systemTemp.path, 'fuel_app', 'exports');
+
+      final dirPath =
+          customDir ?? p.join(Directory.systemTemp.path, 'fuel_app', 'exports');
       final dir = Directory(dirPath);
       if (!await dir.exists()) await dir.create(recursive: true);
-      
-      final fileName = 'fuel_logs_${DateTime.now().millisecondsSinceEpoch}.json';
+
+      final fileName =
+          'fuel_logs_${DateTime.now().millisecondsSinceEpoch}.json';
       final file = File(p.join(dir.path, fileName));
       await file.writeAsString(jsonStr);
       debugPrint('Exported fuel logs to ${file.path}');
@@ -231,17 +240,19 @@ class ApiService {
     try {
       final logs = await getFuelLogs();
       logs.sort((a, b) => a.date.compareTo(b.date));
-      
+
       final buffer = StringBuffer();
       buffer.writeln('Date,Odometer (km),Liters,Cost,Full Tank');
       for (final log in logs) {
-        buffer.writeln('${log.date.toIso8601String()},${log.odometer},${log.liters},${log.cost},${log.isFull}');
+        buffer.writeln(
+            '${log.date.toIso8601String()},${log.odometer},${log.liters},${log.cost},${log.isFull}');
       }
-      
-      final dirPath = customDir ?? p.join(Directory.systemTemp.path, 'fuel_app', 'exports');
+
+      final dirPath =
+          customDir ?? p.join(Directory.systemTemp.path, 'fuel_app', 'exports');
       final dir = Directory(dirPath);
       if (!await dir.exists()) await dir.create(recursive: true);
-      
+
       final fileName = 'fuel_logs_${DateTime.now().millisecondsSinceEpoch}.csv';
       final file = File(p.join(dir.path, fileName));
       await file.writeAsString(buffer.toString());
@@ -258,12 +269,14 @@ class ApiService {
       final records = await getServiceRecords();
       final jsonList = records.map((rec) => rec.toJson()).toList();
       final jsonStr = json.encode(jsonList);
-      
-      final dirPath = customDir ?? p.join(Directory.systemTemp.path, 'fuel_app', 'exports');
+
+      final dirPath =
+          customDir ?? p.join(Directory.systemTemp.path, 'fuel_app', 'exports');
       final dir = Directory(dirPath);
       if (!await dir.exists()) await dir.create(recursive: true);
-      
-      final fileName = 'service_records_${DateTime.now().millisecondsSinceEpoch}.json';
+
+      final fileName =
+          'service_records_${DateTime.now().millisecondsSinceEpoch}.json';
       final file = File(p.join(dir.path, fileName));
       await file.writeAsString(jsonStr);
       debugPrint('Exported service records to ${file.path}');
@@ -278,18 +291,21 @@ class ApiService {
     try {
       final records = await getServiceRecords();
       records.sort((a, b) => a.date.compareTo(b.date));
-      
+
       final buffer = StringBuffer();
       buffer.writeln('Date,Odometer (km),Cost (Rs)');
       for (final record in records) {
-        buffer.writeln('${record.date.toIso8601String()},${record.odometer},${record.cost}');
+        buffer.writeln(
+            '${record.date.toIso8601String()},${record.odometer},${record.cost}');
       }
-      
-      final dirPath = customDir ?? p.join(Directory.systemTemp.path, 'fuel_app', 'exports');
+
+      final dirPath =
+          customDir ?? p.join(Directory.systemTemp.path, 'fuel_app', 'exports');
       final dir = Directory(dirPath);
       if (!await dir.exists()) await dir.create(recursive: true);
-      
-      final fileName = 'service_records_${DateTime.now().millisecondsSinceEpoch}.csv';
+
+      final fileName =
+          'service_records_${DateTime.now().millisecondsSinceEpoch}.csv';
       final file = File(p.join(dir.path, fileName));
       await file.writeAsString(buffer.toString());
       debugPrint('Exported service records to ${file.path}');
@@ -314,7 +330,8 @@ class ApiService {
         if (row.isEmpty) continue;
 
         final cells = row.split(',');
-        if (cells.length < 4) continue; // Need at least: date, odometer, liters, cost
+        if (cells.length < 4)
+          continue; // Need at least: date, odometer, liters, cost
 
         try {
           final log = FuelLog(
@@ -322,7 +339,9 @@ class ApiService {
             odometer: int.parse(cells[1].trim()),
             liters: double.parse(cells[2].trim()),
             cost: double.parse(cells[3].trim()),
-            isFull: cells.length > 4 ? (cells[4].trim().toLowerCase() == 'true') : false,
+            isFull: cells.length > 4
+                ? (cells[4].trim().toLowerCase() == 'true')
+                : false,
           );
 
           await _store.add(db, log.toJson());

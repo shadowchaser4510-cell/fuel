@@ -25,7 +25,8 @@ class _ServiceScreenState extends State<ServiceScreen> {
   Future<void> _loadRecords() async {
     try {
       final records = await _apiService.getServiceRecords();
-      records.sort((a, b) => b.date.compareTo(a.date)); // Sort by date descending
+      records
+          .sort((a, b) => b.date.compareTo(a.date)); // Sort by date descending
       setState(() {
         _records = records;
         _isLoading = false;
@@ -34,7 +35,9 @@ class _ServiceScreenState extends State<ServiceScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading records: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('Error loading records: $e'),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -57,13 +60,17 @@ class _ServiceScreenState extends State<ServiceScreen> {
         await _loadRecords();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Service record added'), backgroundColor: Colors.green),
+            const SnackBar(
+                content: Text('Service record added'),
+                backgroundColor: Colors.green),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error adding record: $e'), backgroundColor: Colors.red),
+            SnackBar(
+                content: Text('Error adding record: $e'),
+                backgroundColor: Colors.red),
           );
         }
       }
@@ -82,20 +89,22 @@ class _ServiceScreenState extends State<ServiceScreen> {
         setState(() => _records[index] = result);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Service record updated'), backgroundColor: Colors.green),
+            const SnackBar(
+                content: Text('Service record updated'),
+                backgroundColor: Colors.green),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error updating record: $e'), backgroundColor: Colors.red),
+            SnackBar(
+                content: Text('Error updating record: $e'),
+                backgroundColor: Colors.red),
           );
         }
       }
     }
   }
-
-
 
   Future<void> _onRefresh() async {
     await _loadRecords();
@@ -107,7 +116,8 @@ class _ServiceScreenState extends State<ServiceScreen> {
       backgroundColor: kBackgroundColor,
       appBar: AppBar(
         backgroundColor: kBackgroundColor,
-        title: const Text('Service Records', style: TextStyle(color: Colors.white)),
+        title: const Text('Service Records',
+            style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
@@ -131,7 +141,8 @@ class _ServiceScreenState extends State<ServiceScreen> {
               onRefresh: _onRefresh,
               child: _records.isEmpty
                   ? const Center(
-                      child: Text('No service records yet', style: TextStyle(color: kSubTextColor, fontSize: 16)),
+                      child: Text('No service records yet',
+                          style: TextStyle(color: kSubTextColor, fontSize: 16)),
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
@@ -154,10 +165,15 @@ class _ServiceScreenState extends State<ServiceScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Export Service Records', style: TextStyle(color: kTextColor, fontSize: 16, fontWeight: FontWeight.bold)),
+            const Text('Export Service Records',
+                style: TextStyle(
+                    color: kTextColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             ListTile(
-              title: const Text('Export as JSON', style: TextStyle(color: kTextColor)),
+              title: const Text('Export as JSON',
+                  style: TextStyle(color: kTextColor)),
               trailing: const Icon(Icons.file_download, color: kPrimaryColor),
               onTap: () {
                 Navigator.pop(ctx);
@@ -165,7 +181,8 @@ class _ServiceScreenState extends State<ServiceScreen> {
               },
             ),
             ListTile(
-              title: const Text('Export as CSV', style: TextStyle(color: kTextColor)),
+              title: const Text('Export as CSV',
+                  style: TextStyle(color: kTextColor)),
               trailing: const Icon(Icons.file_download, color: kPrimaryColor),
               onTap: () {
                 Navigator.pop(ctx);
@@ -173,7 +190,8 @@ class _ServiceScreenState extends State<ServiceScreen> {
               },
             ),
             const Divider(color: kSubTextColor),
-            const Text('Or choose a destination folder:', style: TextStyle(color: kSubTextColor, fontSize: 12)),
+            const Text('Or choose a destination folder:',
+                style: TextStyle(color: kSubTextColor, fontSize: 12)),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -181,7 +199,8 @@ class _ServiceScreenState extends State<ServiceScreen> {
                   child: ElevatedButton.icon(
                     icon: const Icon(Icons.folder),
                     label: const Text('Downloads'),
-                    style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: kPrimaryColor),
                     onPressed: () {
                       Navigator.pop(ctx);
                       _showFormatAndExport('/storage/emulated/0/Download');
@@ -229,9 +248,11 @@ class _ServiceScreenState extends State<ServiceScreen> {
     try {
       String? path;
       if (format == 'json') {
-        path = await _apiService.exportServiceRecordsAsJson(customDir: customDir);
+        path =
+            await _apiService.exportServiceRecordsAsJson(customDir: customDir);
       } else {
-        path = await _apiService.exportServiceRecordsAsCsv(customDir: customDir);
+        path =
+            await _apiService.exportServiceRecordsAsCsv(customDir: customDir);
       }
 
       if (mounted) {
@@ -264,16 +285,21 @@ class _ServiceScreenState extends State<ServiceScreen> {
           context: context,
           builder: (ctx) => AlertDialog(
             backgroundColor: kCardColor,
-            title: const Text('Delete Service Record', style: TextStyle(color: kTextColor)),
-            content: const Text('Are you sure you want to delete this service record?', style: TextStyle(color: kSubTextColor)),
+            title: const Text('Delete Service Record',
+                style: TextStyle(color: kTextColor)),
+            content: const Text(
+                'Are you sure you want to delete this service record?',
+                style: TextStyle(color: kSubTextColor)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel', style: TextStyle(color: kSubTextColor)),
+                child: const Text('Cancel',
+                    style: TextStyle(color: kSubTextColor)),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                child:
+                    const Text('Delete', style: TextStyle(color: Colors.red)),
               ),
             ],
           ),
@@ -284,14 +310,18 @@ class _ServiceScreenState extends State<ServiceScreen> {
             if (mounted) {
               setState(() => _records.removeAt(index));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Service record deleted'), backgroundColor: Colors.green),
+                const SnackBar(
+                    content: Text('Service record deleted'),
+                    backgroundColor: Colors.green),
               );
             }
             return true;
           } catch (e) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error deleting record: $e'), backgroundColor: Colors.red),
+                SnackBar(
+                    content: Text('Error deleting record: $e'),
+                    backgroundColor: Colors.red),
               );
             }
             return false;
@@ -321,7 +351,10 @@ class _ServiceScreenState extends State<ServiceScreen> {
                   children: [
                     Text(
                       DateFormat('EEE, MMM d, yyyy').format(record.date),
-                      style: const TextStyle(color: kTextColor, fontSize: 14, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          color: kTextColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -329,7 +362,8 @@ class _ServiceScreenState extends State<ServiceScreen> {
                         Expanded(
                           child: Text(
                             'Odometer: ${record.odometer} km',
-                            style: const TextStyle(color: kSubTextColor, fontSize: 12),
+                            style: const TextStyle(
+                                color: kSubTextColor, fontSize: 12),
                           ),
                         ),
                       ],
@@ -337,7 +371,10 @@ class _ServiceScreenState extends State<ServiceScreen> {
                     const SizedBox(height: 4),
                     Text(
                       'Cost: Rs ${record.cost.toStringAsFixed(0)}',
-                      style: const TextStyle(color: kPrimaryColor, fontSize: 13, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          color: kPrimaryColor,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -394,7 +431,8 @@ class __AddServiceDialogState extends State<_AddServiceDialog> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        _dateController.text = DateFormat('EEE, MMM d, yyyy').format(_selectedDate);
+        _dateController.text =
+            DateFormat('EEE, MMM d, yyyy').format(_selectedDate);
       });
     }
   }
@@ -417,7 +455,8 @@ class __AddServiceDialogState extends State<_AddServiceDialog> {
       Navigator.pop(context, record);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid input: $e'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text('Invalid input: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -444,15 +483,22 @@ class __AddServiceDialogState extends State<_AddServiceDialog> {
               child: Container(
                 width: 40,
                 height: 4,
-                decoration: BoxDecoration(color: kSubTextColor, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                    color: kSubTextColor,
+                    borderRadius: BorderRadius.circular(2)),
               ),
             ),
             const SizedBox(height: 20),
-            const Text("Add Service Record", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kTextColor)),
+            const Text("Add Service Record",
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: kTextColor)),
             const SizedBox(height: 20),
             _buildDateField(),
             const SizedBox(height: 15),
-            _buildInputField(_odometerController, "Odometer Reading (km)", Icons.speed),
+            _buildInputField(
+                _odometerController, "Odometer Reading (km)", Icons.speed),
             const SizedBox(height: 15),
             _buildInputField(_costController, "Cost (Rs)", Icons.attach_money),
             const SizedBox(height: 20),
@@ -464,10 +510,13 @@ class __AddServiceDialogState extends State<_AddServiceDialog> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kPrimaryColor,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15)),
                   elevation: 5,
                 ),
-                child: const Text("Save Record", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: const Text("Save Record",
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -501,19 +550,24 @@ class __AddServiceDialogState extends State<_AddServiceDialog> {
     );
   }
 
-  Widget _buildInputField(TextEditingController controller, String label, IconData icon) {
+  Widget _buildInputField(
+      TextEditingController controller, String label, IconData icon) {
     return TextFormField(
       controller: controller,
       style: const TextStyle(color: kTextColor),
-      keyboardType: label.contains("Date") ? TextInputType.text : TextInputType.number,
+      keyboardType:
+          label.contains("Date") ? TextInputType.text : TextInputType.number,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: kSubTextColor),
         prefixIcon: Icon(icon, color: kSubTextColor),
         filled: true,
         fillColor: kCardColor,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
-        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       ),
     );
   }
@@ -536,9 +590,12 @@ class __EditServiceDialogState extends State<_EditServiceDialog> {
   @override
   void initState() {
     super.initState();
-    _dateController = TextEditingController(text: DateFormat('yyyy-MM-dd').format(widget.record.date));
-    _odometerController = TextEditingController(text: widget.record.odometer.toString());
-    _costController = TextEditingController(text: widget.record.cost.toStringAsFixed(0));
+    _dateController = TextEditingController(
+        text: DateFormat('yyyy-MM-dd').format(widget.record.date));
+    _odometerController =
+        TextEditingController(text: widget.record.odometer.toString());
+    _costController =
+        TextEditingController(text: widget.record.cost.toStringAsFixed(0));
   }
 
   @override
@@ -559,7 +616,8 @@ class __EditServiceDialogState extends State<_EditServiceDialog> {
       Navigator.pop(context, record);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid input: $e'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text('Invalid input: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -568,7 +626,8 @@ class __EditServiceDialogState extends State<_EditServiceDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: kCardColor,
-      title: const Text('Edit Service Record', style: TextStyle(color: kTextColor)),
+      title: const Text('Edit Service Record',
+          style: TextStyle(color: kTextColor)),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -581,7 +640,8 @@ class __EditServiceDialogState extends State<_EditServiceDialog> {
                 labelStyle: const TextStyle(color: kSubTextColor),
                 filled: true,
                 fillColor: kBackgroundColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
             const SizedBox(height: 12),
@@ -594,7 +654,8 @@ class __EditServiceDialogState extends State<_EditServiceDialog> {
                 labelStyle: const TextStyle(color: kSubTextColor),
                 filled: true,
                 fillColor: kBackgroundColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
             const SizedBox(height: 12),
@@ -607,7 +668,8 @@ class __EditServiceDialogState extends State<_EditServiceDialog> {
                 labelStyle: const TextStyle(color: kSubTextColor),
                 filled: true,
                 fillColor: kBackgroundColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
           ],

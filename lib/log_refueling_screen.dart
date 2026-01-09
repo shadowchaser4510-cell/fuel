@@ -61,7 +61,8 @@ class _LogRefuelingScreenState extends State<LogRefuelingScreen> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        _dateController.text = DateFormat('EEE, MMM d, yyyy').format(_selectedDate);
+        _dateController.text =
+            DateFormat('EEE, MMM d, yyyy').format(_selectedDate);
       });
     }
   }
@@ -138,8 +139,8 @@ class _LogRefuelingScreenState extends State<LogRefuelingScreen> {
               Row(
                 children: [
                   Expanded(
-                      child: _buildInputField(
-                          _litersController, "Liters", Icons.local_gas_station)),
+                      child: _buildInputField(_litersController, "Liters",
+                          Icons.local_gas_station)),
                   const SizedBox(width: 15),
                   Expanded(
                       child: _buildInputField(
@@ -148,8 +149,8 @@ class _LogRefuelingScreenState extends State<LogRefuelingScreen> {
               ),
               const SizedBox(height: 15),
               SwitchListTile(
-                title:
-                    const Text("Full Tank?", style: TextStyle(color: kTextColor)),
+                title: const Text("Full Tank?",
+                    style: TextStyle(color: kTextColor)),
                 value: _isFullTank,
                 onChanged: (val) => setState(() => _isFullTank = val),
                 activeColor: kPrimaryColor,
