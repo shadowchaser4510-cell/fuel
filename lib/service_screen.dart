@@ -15,6 +15,12 @@ class _ServiceScreenState extends State<ServiceScreen> {
   final ApiService _apiService = ApiService();
   List<ServiceRecord> _records = [];
   bool _isLoading = true;
+  
+  // Analytics state
+  List<double> _recentServiceCosts = [];
+  List<String> _recentServiceLabels = [];
+  double _totalServiceSpent = 0.0;
+  int _daysUntilNextService = 0;
 
   @override
   void initState() {
@@ -25,8 +31,25 @@ class _ServiceScreenState extends State<ServiceScreen> {
   Future<void> _loadRecords() async {
     try {
       final records = await _apiService.getServiceRecords();
-      records
-          .sort((a, b) => b.date.compareTo(a.date)); // Sort by date descending
+      // Sort by odometer to assign indexes
+      records.sort((a, b) => a.odometer.compareTo(b.odometer));
+      
+      // Assign indexes based on odometer reading
+      for (int i = 0; i < records.length; i++) {
+        records[i] = ServiceRecord(
+          date: records[i].date,
+          odometer: records[i].odometer,
+          cost: records[i].cost,
+          index: i,
+        );
+      }
+      
+      // Sort by index (which represents chronological order by odometer)
+      records.sort((a, b) => a.index.compareTo(b.index));
+      
+      // Calculate analytics
+      _calculateServiceAnalytics(records);
+      
       setState(() {
         _records = records;
         _isLoading = false;
@@ -110,6 +133,38 @@ class _ServiceScreenState extends State<ServiceScreen> {
     await _loadRecords();
   }
 
+  void _calculateServiceAnalytics(List<ServiceRecord> records) {
+    // Calculate total spent
+    double totalSpent = 0.0;
+    for (var record in records) {
+      totalSpent += record.cost;
+    }
+    _totalServiceSpent = totalSpent;
+
+    // Get last 6 services
+    List<double> costs = [];
+    List<String> labels = [];
+    
+    int startIndex = records.length > 6 ? records.length - 6 : 0;
+    for (int i = startIndex; i < records.length; i++) {
+      costs.add(records[i].cost);
+      labels.add("S${i + 1}");
+    }
+    
+    _recentServiceCosts = costs;
+    _recentServiceLabels = labels;
+    
+    // Calculate days until next service (183 days after most recent service)
+    if (records.isNotEmpty) {
+      final mostRecent = records.last; // records are sorted by index ascending
+      final dueDate = mostRecent.date.add(const Duration(days: 183));
+      final diff = dueDate.difference(DateTime.now()).inDays;
+      _daysUntilNextService = diff > 0 ? diff : 0;
+    } else {
+      _daysUntilNextService = 0;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -144,13 +199,105 @@ class _ServiceScreenState extends State<ServiceScreen> {
                       child: Text('No service records yet',
                           style: TextStyle(color: kSubTextColor, fontSize: 16)),
                     )
-                  : ListView.builder(
+                  : ListView(
                       padding: const EdgeInsets.all(16),
-                      itemCount: _records.length,
-                      itemBuilder: (ctx, index) {
-                        final record = _records[index];
-                        return _buildRecordCard(record, index);
-                      },
+                      children: [
+                        // Total Spent on Service
+                        const Text("Total Spent on Service",
+                            style: TextStyle(
+                                color: kTextColor,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 12),
+                        CustomCard(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text("Total Service Cost",
+                                    style: TextStyle(
+                                        color: kSubTextColor, fontSize: 14)),
+                                Text(
+                                  "₹${_totalServiceSpent.toStringAsFixed(2)}",
+                                  style: const TextStyle(
+                                      color: kPrimaryColor,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Next service due tile
+                        CustomCard(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text("Next Service Due",
+                                    style: TextStyle(
+                                        color: kSubTextColor, fontSize: 14)),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      _daysUntilNextService > 0
+                                          ? '$_daysUntilNextService days'
+                                          : 'Due now',
+                                      style: const TextStyle(
+                                          color: kPrimaryColor,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    const Text('183 days interval',
+                                        style:
+                                            TextStyle(color: kSubTextColor, fontSize: 12)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 25),
+                        
+                        // Previous 6 Services Cost Graph
+                        if (_recentServiceCosts.isNotEmpty) ...[
+                          const Text("Previous Services Cost",
+                              style: TextStyle(
+                                  color: kTextColor,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 12),
+                          CustomCard(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                BarChart(
+                                  dataPoints: _recentServiceCosts,
+                                  labels: _recentServiceLabels,
+                                  height: 180,
+                                ),
+                                const SizedBox(height: 12),
+                                Align(
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                      'Showing last ${_recentServiceLabels.length} services',
+                                      style: const TextStyle(
+                                          color: kSubTextColor, fontSize: 10)),
+                                )
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 25),
+                        ],
+                        
+                        // Service records have been moved into the unified History screen.
+                      ],
                     ),
             ),
     );

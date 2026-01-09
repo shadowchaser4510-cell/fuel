@@ -16,39 +16,142 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen> {
   final ApiService _apiService = ApiService();
   List<FuelLog> _logs = [];
+  List<ServiceRecord> _serviceRecords = [];
   bool _isLoading = true;
+  String _viewMode = 'fuel'; // 'fuel' or 'service'
 
   @override
   void initState() {
     super.initState();
-    _loadLogs();
+    _loadData();
     // Listen for changes so the list refreshes automatically when logs are added/updated/deleted
     fuelLogsVersion.addListener(_onExternalChange);
   }
 
-  void _onExternalChange() {
-    if (mounted) _loadLogs();
+  Widget _buildServiceCard(int index) {
+    // display newest-first
+    final actualIndex = _serviceRecords.length - 1 - index;
+    final record = _serviceRecords[actualIndex];
+
+    return Dismissible(
+      key: Key(record.date.toIso8601String()),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: kCardColor,
+            title: const Text('Delete Record', style: TextStyle(color: kTextColor)),
+            content: const Text('Are you sure you want to delete this record?', style: TextStyle(color: kSubTextColor)),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel', style: TextStyle(color: kSubTextColor))),
+              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+            ],
+          ),
+        );
+        if (confirm == true) {
+          try {
+            await _apiService.deleteServiceRecord(record);
+            if (mounted) {
+              setState(() => _serviceRecords.removeAt(actualIndex));
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Service record deleted'), backgroundColor: Colors.green));
+            }
+            return true;
+          } catch (e) {
+            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting record: $e'), backgroundColor: Colors.red));
+            return false;
+          }
+        }
+        return false;
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(15)),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      child: GestureDetector(
+        onTap: () {
+          showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                    backgroundColor: kCardColor,
+                    title: Text(DateFormat('EEE, MMM d, yyyy').format(record.date), style: const TextStyle(color: kTextColor)),
+                    content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Odometer: ${record.odometer} km', style: const TextStyle(color: kSubTextColor)),
+                      const SizedBox(height: 8),
+                      Text('Cost: ₹${record.cost.toStringAsFixed(2)}', style: const TextStyle(color: kSubTextColor)),
+                    ]),
+                    actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close', style: TextStyle(color: kPrimaryColor)))],
+                  ));
+        },
+        child: CustomCard(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(DateFormat('EEE, MMM d, yyyy').format(record.date), style: const TextStyle(color: kTextColor, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 6),
+              Text('Odometer: ${record.odometer} km', style: const TextStyle(color: kSubTextColor)),
+              const SizedBox(height: 4),
+              Text('Cost: ₹${record.cost.toStringAsFixed(2)}', style: const TextStyle(color: kPrimaryColor, fontWeight: FontWeight.bold)),
+            ]),
+            const Icon(Icons.chevron_right, color: kSubTextColor)
+          ]),
+        ),
+      ),
+    );
   }
 
-  Future<void> _loadLogs() async {
+  void _onExternalChange() {
+    if (mounted) _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
     try {
-      final logs = await _apiService.getFuelLogs();
-      // Sort by date descending, then by odometer ascending (lower odometer = older on same day)
-      logs.sort((a, b) {
-        final dateCompare = b.date.compareTo(a.date);
-        if (dateCompare != 0) return dateCompare;
-        return a.odometer.compareTo(b.odometer);
-      });
-      setState(() {
-        _logs = logs;
-        _isLoading = false;
-      });
+      if (_viewMode == 'fuel') {
+        final logs = await _apiService.getFuelLogs();
+        // Sort by odometer ascending and assign index
+        logs.sort((a, b) => a.odometer.compareTo(b.odometer));
+        for (int i = 0; i < logs.length; i++) {
+          logs[i] = FuelLog(
+            date: logs[i].date,
+            odometer: logs[i].odometer,
+            liters: logs[i].liters,
+            cost: logs[i].cost,
+            isFull: logs[i].isFull,
+            tag: logs[i].tag,
+            index: i,
+          );
+        }
+        // keep ascending order (oldest first)
+        setState(() {
+          _logs = logs;
+          _isLoading = false;
+        });
+      } else {
+        final records = await _apiService.getServiceRecords();
+        // Sort by odometer ascending and assign index
+        records.sort((a, b) => a.odometer.compareTo(b.odometer));
+        for (int i = 0; i < records.length; i++) {
+          records[i] = ServiceRecord(
+            date: records[i].date,
+            odometer: records[i].odometer,
+            cost: records[i].cost,
+            index: i,
+          );
+        }
+        setState(() {
+          _serviceRecords = records;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Error loading logs: $e'),
+              content: Text('Error loading data: $e'),
               backgroundColor: Colors.red),
         );
       }
@@ -70,7 +173,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     if (result != null) {
       try {
         await _apiService.updateFuelLog(result);
-        setState(() => _logs[index] = result);
+        // index provided by caller is display index (newest-first). Map to actual index
+        final actualIndex = _logs.length - 1 - index;
+        setState(() => _logs[actualIndex] = result);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -90,7 +195,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _onRefresh() async {
-    await _loadLogs();
+    await _loadData();
   }
 
   @override
@@ -99,8 +204,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
       backgroundColor: kBackgroundColor,
       appBar: AppBar(
         backgroundColor: kBackgroundColor,
-        title: const Text('Fuel Log History',
-            style: TextStyle(color: Colors.white)),
+        title: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: _viewMode,
+            dropdownColor: kCardColor,
+            items: const [
+              DropdownMenuItem(value: 'fuel', child: Text('Fuel Log History')),
+              DropdownMenuItem(value: 'service', child: Text('Service History')),
+            ],
+            onChanged: (val) {
+              if (val == null) return;
+              setState(() {
+                _viewMode = val;
+              });
+              _loadData();
+            },
+            style: const TextStyle(color: Colors.white, fontSize: 18),
+            iconEnabledColor: Colors.white,
+          ),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
@@ -121,19 +243,34 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ? const Center(child: CircularProgressIndicator(color: kPrimaryColor))
           : RefreshIndicator(
               onRefresh: _onRefresh,
-              child: _logs.isEmpty
-                  ? const Center(
-                      child: Text('No fuel logs yet',
-                          style: TextStyle(color: kSubTextColor, fontSize: 16)),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _logs.length,
-                      itemBuilder: (ctx, index) {
-                        final log = _logs[index];
-                        return _buildLogCard(log, index);
-                      },
-                    ),
+              child: _viewMode == 'fuel'
+                  ? (_logs.isEmpty
+                      ? const Center(
+                          child: Text('No fuel logs yet',
+                              style:
+                                  TextStyle(color: kSubTextColor, fontSize: 16)),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _logs.length,
+                          itemBuilder: (ctx, index) {
+                            // display newest-first by mapping index
+                            return _buildLogCardIndex(index);
+                          },
+                        ))
+                  : (_serviceRecords.isEmpty
+                      ? const Center(
+                          child: Text('No service records yet',
+                              style:
+                                  TextStyle(color: kSubTextColor, fontSize: 16)),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _serviceRecords.length,
+                          itemBuilder: (ctx, index) {
+                            return _buildServiceCard(index);
+                          },
+                        )),
             ),
     );
   }
@@ -273,7 +410,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             const Text(
-                'CSV format (header required): date,odometer,liters,cost,isFull\nDate format: YYYY-MM-DD\nExample: 2025-12-31,12345,35.7,4300,true',
+                'CSV format (header required): date,odometer,liters,cost,isFull,tag\nDate format: YYYY-MM-DD\nExample: 2025-12-31,12345,35.7,4300,true,\\"Premium\\"',
                 style: TextStyle(color: kSubTextColor)),
             const SizedBox(height: 16),
             Row(
@@ -308,8 +445,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
       final file = result.files.first;
       final content = String.fromCharCodes(
           file.bytes ?? await File(file.path!).readAsBytes());
-      final imported = await _apiService.importFuelLogsFromCsv(content);
-      await _loadLogs();
+      int imported = 0;
+      if (_viewMode == 'service') {
+        imported = await _apiService.importServiceRecordsFromCsv(content);
+      } else {
+        imported = await _apiService.importFuelLogsFromCsv(content);
+      }
+      await _loadData();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -327,16 +469,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
-  Widget _buildLogCard(FuelLog log, int index) {
-    // Calculate mileage if possible
+  Widget _buildLogCardIndex(int displayIndex) {
+    // Map display index (newest-first) to actual index (ascending by odometer)
+    final actualIndex = _logs.length - 1 - displayIndex;
+    final log = _logs[actualIndex];
+
+    // Calculate mileage and rupees/km if possible using odometer-ordered neighbors
     String mileageStr = 'N/A';
-    if (index < _logs.length - 1) {
-      final prevLog =
-          _logs[index + 1]; // Next item in descending order = previous in time
+    String rupeesPerKmStr = 'N/A';
+    if (actualIndex > 0) {
+      final prevLog = _logs[actualIndex - 1];
       final distance = log.odometer - prevLog.odometer;
       if (distance > 0 && log.liters > 0) {
         final mileage = distance / log.liters;
         mileageStr = '${mileage.toStringAsFixed(1)} km/L';
+        final rpk = log.cost / distance;
+        rupeesPerKmStr = '₹${rpk.toStringAsFixed(2)}/km';
       }
     }
 
@@ -344,7 +492,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
       key: Key(log.date.toIso8601String()),
       direction: DismissDirection.endToStart,
       confirmDismiss: (_) async {
-        // Show confirmation dialog before dismissing
         final confirm = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
@@ -369,16 +516,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
         );
         if (confirm == true) {
           try {
-            await _apiService.deleteFuelLog(_logs[index]);
+            await _apiService.deleteFuelLog(_logs[actualIndex]);
             if (mounted) {
-              setState(() => _logs.removeAt(index));
+              setState(() => _logs.removeAt(actualIndex));
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                     content: Text('Log deleted'),
                     backgroundColor: Colors.green),
               );
             }
-            return true; // Allow dismissal
+            return true;
           } catch (e) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -387,10 +534,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     backgroundColor: Colors.red),
               );
             }
-            return false; // Don't dismiss on error
+            return false;
           }
         }
-        return false; // Don't dismiss if not confirmed
+        return false;
       },
       background: Container(
         alignment: Alignment.centerRight,
@@ -402,7 +549,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       child: GestureDetector(
-        onTap: () => _editLog(log, index),
+        onTap: () => _editLog(log, displayIndex),
         child: CustomCard(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           child: Row(
@@ -444,23 +591,45 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            'Cost: \$${log.cost.toStringAsFixed(2)}',
+                            'Cost: ₹${log.cost.toStringAsFixed(2)}',
                             style: const TextStyle(
                                 color: kSubTextColor, fontSize: 12),
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: Text(
-                            'Mileage: $mileageStr',
-                            style: const TextStyle(
-                                color: kPrimaryColor,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Mileage: $mileageStr',
+                                style: const TextStyle(
+                                    color: kPrimaryColor,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '₹/km: $rupeesPerKmStr',
+                                style: const TextStyle(
+                                    color: kSubTextColor, fontSize: 11),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
+                    if (log.tag != null && log.tag!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'Tag: ${log.tag}',
+                          style: const TextStyle(
+                              color: kSecondaryColor,
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic),
+                        ),
+                      ),
                     if (log.isFull)
                       Padding(
                         padding: const EdgeInsets.only(top: 6),
@@ -506,6 +675,7 @@ class __EditLogDialogState extends State<_EditLogDialog> {
   late TextEditingController _odometerController;
   late TextEditingController _litersController;
   late TextEditingController _costController;
+  late TextEditingController _tagController;
   late bool _isFullTank;
 
   @override
@@ -518,6 +688,7 @@ class __EditLogDialogState extends State<_EditLogDialog> {
     _litersController =
         TextEditingController(text: widget.log.liters.toString());
     _costController = TextEditingController(text: widget.log.cost.toString());
+    _tagController = TextEditingController(text: widget.log.tag ?? '');
     _isFullTank = widget.log.isFull;
   }
 
@@ -527,6 +698,7 @@ class __EditLogDialogState extends State<_EditLogDialog> {
     _odometerController.dispose();
     _litersController.dispose();
     _costController.dispose();
+    _tagController.dispose();
     super.dispose();
   }
 
@@ -538,6 +710,7 @@ class __EditLogDialogState extends State<_EditLogDialog> {
         liters: double.parse(_litersController.text),
         cost: double.parse(_costController.text),
         isFull: _isFullTank,
+        tag: _tagController.text.isEmpty ? null : _tagController.text,
       );
       Navigator.pop(context, updatedLog);
     } catch (e) {
@@ -603,7 +776,20 @@ class __EditLogDialogState extends State<_EditLogDialog> {
               style: const TextStyle(color: kTextColor),
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'Cost (\$)',
+                labelText: 'Cost (₹)',
+                labelStyle: const TextStyle(color: kSubTextColor),
+                filled: true,
+                fillColor: kBackgroundColor,
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _tagController,
+              style: const TextStyle(color: kTextColor),
+              decoration: InputDecoration(
+                labelText: 'Tag (Optional)',
                 labelStyle: const TextStyle(color: kSubTextColor),
                 filled: true,
                 fillColor: kBackgroundColor,

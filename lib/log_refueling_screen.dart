@@ -17,6 +17,7 @@ class _LogRefuelingScreenState extends State<LogRefuelingScreen> {
   final _litersController = TextEditingController();
   final _costController = TextEditingController();
   final _dateController = TextEditingController();
+  final _tagController = TextEditingController();
   late DateTime _selectedDate;
   bool _isFullTank = true;
   bool _isLoading = false;
@@ -35,6 +36,7 @@ class _LogRefuelingScreenState extends State<LogRefuelingScreen> {
     _litersController.dispose();
     _costController.dispose();
     _dateController.dispose();
+    _tagController.dispose();
     super.dispose();
   }
 
@@ -77,6 +79,7 @@ class _LogRefuelingScreenState extends State<LogRefuelingScreen> {
           liters: double.parse(_litersController.text),
           cost: double.parse(_costController.text),
           isFull: _isFullTank,
+          tag: _tagController.text.isEmpty ? null : _tagController.text,
         );
 
         final success = await _apiService.addFuelLog(newLog);
@@ -144,9 +147,11 @@ class _LogRefuelingScreenState extends State<LogRefuelingScreen> {
                   const SizedBox(width: 15),
                   Expanded(
                       child: _buildInputField(
-                          _costController, "Total Cost", Icons.attach_money)),
+                          _costController, "Total Cost (₹)", Icons.attach_money)),
                 ],
               ),
+              const SizedBox(height: 15),
+              _buildInputField(_tagController, "Add Tag (Optional)", Icons.local_offer),
               const SizedBox(height: 15),
               SwitchListTile(
                 title: const Text("Full Tank?",

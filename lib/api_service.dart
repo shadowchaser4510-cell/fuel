@@ -239,13 +239,18 @@ class ApiService {
   Future<String> exportFuelLogsAsCsv({String? customDir}) async {
     try {
       final logs = await getFuelLogs();
-      logs.sort((a, b) => a.date.compareTo(b.date));
+      // Sort by date descending, then by odometer ascending (lower odometer = older on same day)
+      logs.sort((a, b) {
+        final dateCompare = b.date.compareTo(a.date);
+        if (dateCompare != 0) return dateCompare;
+        return a.odometer.compareTo(b.odometer);
+      });
 
       final buffer = StringBuffer();
-      buffer.writeln('Date,Odometer (km),Liters,Cost,Full Tank');
+      buffer.writeln('Date,Odometer (km),Liters,Cost (₹),Full Tank,Tag');
       for (final log in logs) {
         buffer.writeln(
-            '${log.date.toIso8601String()},${log.odometer},${log.liters},${log.cost},${log.isFull}');
+            '${log.date.toIso8601String()},${log.odometer},${log.liters},${log.cost},${log.isFull},${log.tag ?? ''}');
       }
 
       final dirPath =
@@ -356,6 +361,44 @@ class ApiService {
       return importedCount;
     } catch (e) {
       throw Exception('Error importing fuel logs: $e');
+    }
+  }
+
+  // Import service records from CSV file
+  Future<int> importServiceRecordsFromCsv(String csvContent) async {
+    try {
+      final db = await _getDb();
+
+      final rows = csvContent.split('\n');
+      if (rows.isEmpty) throw Exception('CSV file is empty');
+
+      // Skip header row and process data rows
+      int importedCount = 0;
+      for (int i = 1; i < rows.length; i++) {
+        final row = rows[i].trim();
+        if (row.isEmpty) continue;
+
+        final cells = row.split(',');
+        if (cells.length < 3) continue; // Need at least: date, odometer, cost
+
+        try {
+          final rec = ServiceRecord(
+            date: DateTime.parse(cells[0].trim()),
+            odometer: int.parse(cells[1].trim()),
+            cost: double.parse(cells[2].trim()),
+          );
+
+          await _serviceStore.add(db, rec.toJson());
+          importedCount++;
+        } catch (e) {
+          debugPrint('Error parsing service row $i: $e');
+          continue;
+        }
+      }
+
+      return importedCount;
+    } catch (e) {
+      throw Exception('Error importing service records: $e');
     }
   }
 }

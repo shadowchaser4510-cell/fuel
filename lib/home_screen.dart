@@ -38,12 +38,24 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchData() async {
     try {
       final logs = await _apiService.getFuelLogs();
-      // Sort by date ascending, then by odometer descending to find the latest (higher odometer = newer on same day)
-      logs.sort((a, b) {
-        final dateCompare = a.date.compareTo(b.date);
-        if (dateCompare != 0) return dateCompare;
-        return b.odometer.compareTo(a.odometer);
-      });
+      // Sort by odometer to assign indexes
+      logs.sort((a, b) => a.odometer.compareTo(b.odometer));
+      
+      // Assign indexes based on odometer reading
+      for (int i = 0; i < logs.length; i++) {
+        logs[i] = FuelLog(
+          date: logs[i].date,
+          odometer: logs[i].odometer,
+          liters: logs[i].liters,
+          cost: logs[i].cost,
+          isFull: logs[i].isFull,
+          tag: logs[i].tag,
+          index: i,
+        );
+      }
+      
+      // Sort by index for calculations
+      logs.sort((a, b) => a.index.compareTo(b.index));
 
       setState(() {
         _fuelLogs = logs;
@@ -62,19 +74,20 @@ class _HomeScreenState extends State<HomeScreen> {
       _lastMileage = "N/A";
       return;
     }
-
     // 1. Days since last refuel
     final lastLog = _fuelLogs.last;
     final difference = DateTime.now().difference(lastLog.date).inDays;
     _daysSinceLastRefuel = "$difference days ago";
 
-    // 2. Last Mileage — show the mileage (km per litre) for the latest refuel if possible.
+    // 2. Last Mileage — show the mileage (km per litre) for the latest refuel if possible,
+    //    and the rupees/km for the last refuel as additional info.
     if (_fuelLogs.length >= 2) {
       final prevLog = _fuelLogs[_fuelLogs.length - 2];
       final distance = lastLog.odometer - prevLog.odometer;
       if (distance > 0 && lastLog.liters > 0) {
         final mileage = distance / lastLog.liters;
-        _lastMileage = "${mileage.toStringAsFixed(1)} km/L";
+        final rupeesPerKm = lastLog.cost / distance;
+        _lastMileage = "${mileage.toStringAsFixed(1)} km/L\n₹${rupeesPerKm.toStringAsFixed(2)}/km";
       } else {
         // Fallback to odometer if we cannot compute mileage
         _lastMileage = "${lastLog.odometer} km";
@@ -285,10 +298,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         Row(
                           children: [
                             Expanded(
+                                flex: 1,
                                 child: _buildSummaryCard(
                                     "Last Refueling", _daysSinceLastRefuel)),
                             const SizedBox(width: 15),
                             Expanded(
+                                flex: 2,
                                 child: _buildSummaryCard(
                                     "Last Mileage", _lastMileage)),
                           ],
@@ -332,12 +347,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Summary Card showing a large number and a small unit/label below
   Widget _buildSummaryCard(String title, String value) {
-    // Derive main number/text and a small sublabel (e.g., "days ago" or "km/L")
+    // Support multiline values where second line is additional small info
     String mainText = value;
     String subText = '';
 
     if (value != 'N/A') {
-      if (title == 'Last Refueling' && value.contains(' ')) {
+      if (value.contains('\n')) {
+        final parts = value.split('\n');
+        mainText = parts.first;
+        subText = parts.length > 1 ? parts[1] : '';
+      } else if (title == 'Last Refueling' && value.contains(' ')) {
         final parts = value.split(' ');
         mainText = parts.first;
         subText = parts.sublist(1).join(' ');

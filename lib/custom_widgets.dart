@@ -169,7 +169,7 @@ class BarChart extends StatelessWidget {
     // screen width available if needed for responsive calculations
 
     return SizedBox(
-      height: height,
+      height: height + 2,
       child: Column(
         children: [
           Expanded(
@@ -182,7 +182,7 @@ class BarChart extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Text(
-                          NumberFormat.currency(symbol: '\$', decimalDigits: 0)
+                          NumberFormat.currency(symbol: '₹', decimalDigits: 0)
                               .format(dataPoints[index]),
                           style: const TextStyle(
                               color: kSubTextColor, fontSize: 10)),

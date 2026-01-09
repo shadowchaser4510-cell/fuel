@@ -20,6 +20,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   List<double> _quarterlyDrivenData = List.filled(4, 0.0);
   List<double> _recentMileageData = [];
   List<String> _recentMileageLabels = [];
+  double _totalFuelSpent = 0.0;
+  DateTime? _totalFuelSince;
 
   // Labels
   List<String> _monthLabels = [];
@@ -35,15 +37,30 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       // 1. Fetch Raw Data
       List<FuelLog> logs = await _apiService.getFuelLogs();
 
-      // 2. Sort by Date (Crucial for Odometer math)
-      logs.sort((a, b) => a.date.compareTo(b.date));
+      // 2. Sort by odometer and assign indexes
+      logs.sort((a, b) => a.odometer.compareTo(b.odometer));
+      for (int i = 0; i < logs.length; i++) {
+        logs[i] = FuelLog(
+          date: logs[i].date,
+          odometer: logs[i].odometer,
+          liters: logs[i].liters,
+          cost: logs[i].cost,
+          isFull: logs[i].isFull,
+          tag: logs[i].tag,
+          index: i,
+        );
+      }
 
-      // 3. If we have data, use the latest year present to aggregate monthly/quarterly
+      // 3. Sort by index for calculations
+      logs.sort((a, b) => a.index.compareTo(b.index));
+
+      // 4. If we have data, use the latest year present to aggregate monthly/quarterly
       if (logs.isNotEmpty) {
         final latestYear = logs.last.date.year;
         _calculateMonthlySpend(logs, year: latestYear);
         _calculateQuarterlyDriven(logs, year: latestYear);
         _calculateMileage(logs);
+        _calculateTotalFuelSpent(logs);
 
         if (showSnackbar && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -178,6 +195,20 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     }
   }
 
+  void _calculateTotalFuelSpent(List<FuelLog> logs) {
+    double totalSpent = 0.0;
+    for (var log in logs) {
+      totalSpent += log.cost;
+    }
+    _totalFuelSpent = totalSpent;
+    if (logs.isNotEmpty) {
+      // logs are expected to be sorted by odometer ascending; oldest is first
+      _totalFuelSince = logs.first.date;
+    } else {
+      _totalFuelSince = null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -219,7 +250,48 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 1. Monthly Spend
+                    // 1. Total Spent on Fuel
+                    const Text("Total Spent on Fuel",
+                        style: TextStyle(
+                            color: kTextColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 15),
+                    CustomCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text("Total Fuel Cost",
+                                style: TextStyle(
+                                    color: kSubTextColor, fontSize: 14)),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  "₹${_totalFuelSpent.toStringAsFixed(2)}",
+                                  style: const TextStyle(
+                                      color: kPrimaryColor,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                if (_totalFuelSince != null)
+                                  Text(
+                                    'Since ${DateFormat('dd MMM yyyy').format(_totalFuelSince!)}',
+                                    style: const TextStyle(
+                                        color: kSubTextColor, fontSize: 12),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    // 2. Monthly Spend
                     const Text("Monthly Fuel Spend (Last 6 Months)",
                         style: TextStyle(
                             color: kTextColor,
@@ -238,7 +310,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                           ),
                           const SizedBox(height: 12),
                           const Align(
-                            alignment: Alignment.centerRight,
+                            alignment: Alignment.center,
                             child: Text('Showing data for the last 6 months',
                                 style: TextStyle(
                                     color: kSubTextColor, fontSize: 10)),
@@ -249,7 +321,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
                     const SizedBox(height: 25),
 
-                    // 2. Vehicle Driven (Quarterly)
+                    // 3. Vehicle Driven (Quarterly)
                     const Text("Vehicle Driven (Quarterly - This Year)",
                         style: TextStyle(
                             color: kTextColor,
@@ -277,7 +349,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
                     const SizedBox(height: 25),
 
-                    // 3. Recent Mileage
+                    // 4. Recent Mileage
                     const Text("Mileage (Last 5 Refuels)",
                         style: TextStyle(
                             color: kTextColor,
