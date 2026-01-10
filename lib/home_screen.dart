@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'custom_widgets.dart';
 import 'transaction_model.dart';
 import 'api_service.dart';
@@ -24,38 +21,19 @@ class _HomeScreenState extends State<HomeScreen> {
   String _daysSinceLastRefuel = "N/A";
   String _lastMileage = "N/A";
 
-  // Car image guard
-  Uint8List? _carImageBytes;
-  bool _carImageLoading = true;
+  final String _carImageUrl =
+      'https://cdni.autocarindia.com/Utils/ImageResizer.ashx?n=https://cdni.autocarindia.com/ExtraImages/20230904011632_Nexon_facelift_front.jpg&w=700&c=1';
 
   @override
   void initState() {
     super.initState();
     _fetchData();
-    _loadCarImage();
   }
 
   Future<void> _fetchData() async {
     try {
       final logs = await _apiService.getFuelLogs();
-      // Sort by odometer to assign indexes
       logs.sort((a, b) => a.odometer.compareTo(b.odometer));
-
-      // Assign indexes based on odometer reading
-      for (int i = 0; i < logs.length; i++) {
-        logs[i] = FuelLog(
-          date: logs[i].date,
-          odometer: logs[i].odometer,
-          liters: logs[i].liters,
-          cost: logs[i].cost,
-          isFull: logs[i].isFull,
-          tag: logs[i].tag,
-          index: i,
-        );
-      }
-
-      // Sort by index for calculations
-      logs.sort((a, b) => a.index.compareTo(b.index));
 
       setState(() {
         _fuelLogs = logs;
@@ -63,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _calculateSummaryData();
       });
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
       debugPrint("Error fetching data: $e");
     }
   }
@@ -74,279 +52,250 @@ class _HomeScreenState extends State<HomeScreen> {
       _lastMileage = "N/A";
       return;
     }
-    // 1. Days since last refuel
+
     final lastLog = _fuelLogs.last;
     final difference = DateTime.now().difference(lastLog.date).inDays;
-    _daysSinceLastRefuel = "$difference days ago";
+    _daysSinceLastRefuel = difference == 0 ? "Today" : "$difference days ago";
 
-    // 2. Last Mileage — show the mileage (km per litre) for the latest refuel if possible,
-    //    and the rupees/km for the last refuel as additional info.
     if (_fuelLogs.length >= 2) {
       final prevLog = _fuelLogs[_fuelLogs.length - 2];
       final distance = lastLog.odometer - prevLog.odometer;
+
       if (distance > 0 && lastLog.liters > 0) {
         final mileage = distance / lastLog.liters;
         final rupeesPerKm = lastLog.cost / distance;
-        // Show both values with 2 decimals (always show trailing zero)
+        // Capitalized Km here as requested
         _lastMileage =
-            "${mileage.toStringAsFixed(2)} km/L\n₹${rupeesPerKm.toStringAsFixed(2)}/km";
+            "${mileage.toStringAsFixed(2)} Km/L\n₹${rupeesPerKm.toStringAsFixed(2)}/km";
       } else {
-        // Fallback to odometer if we cannot compute mileage
-        _lastMileage = "${lastLog.odometer} km";
+        _lastMileage = "N/A";
       }
     } else {
-      // Not enough data to compute mileage — show odometer reading
-      _lastMileage = "${lastLog.odometer} km";
+      _lastMileage = "N/A";
     }
-  }
-
-  Future<void> _loadCarImage() async {
-    const url =
-        'https://cdni.autocarindia.com/Utils/ImageResizer.ashx?n=https://cdni.autocarindia.com/ExtraImages/20230904011632_Nexon_facelift_front.jpg&w=700&c=1';
-    try {
-      final res = await http.get(Uri.parse(url));
-      if (res.statusCode == 200 && res.bodyBytes.isNotEmpty) {
-        try {
-          // Try to instantiate codec to ensure bytes are valid image data
-          await ui.instantiateImageCodec(res.bodyBytes);
-          if (mounted)
-            setState(() {
-              _carImageBytes = res.bodyBytes;
-              _carImageLoading = false;
-            });
-          return;
-        } catch (e) {
-          debugPrint('Car image decode failed: $e');
-        }
-      }
-    } catch (e) {
-      debugPrint('Car image fetch failed: $e');
-    }
-
-    if (mounted)
-      setState(() {
-        _carImageBytes = null;
-        _carImageLoading = false;
-      });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openAddSheet,
-        backgroundColor: kPrimaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(-0.8, -0.7),
-            radius: 1.2,
-            colors: [Color(0xFF131313), Color(0xFF1F1F1F)],
-            stops: [0.0, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(color: kPrimaryColor))
-              : Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // small status icon top-left
-                        const Align(
-                          alignment: Alignment.topLeft,
-                          child: Padding(
-                            padding: EdgeInsets.only(bottom: 8.0),
-                            child: CircleAvatar(
-                              radius: 14,
-                              backgroundColor: Color(0x33000000),
-                              child: Icon(Icons.radio_button_checked,
-                                  size: 14, color: Colors.white),
-                            ),
+      backgroundColor: kBackgroundColor,
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: kPrimaryColor))
+            : RefreshIndicator(
+                onRefresh: _fetchData,
+                color: kPrimaryColor,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // CHANGED: Text to "Welcome, Tushar"
+                          const Text("Welcome, Tushar",
+                              style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w500,
+                                  color: kSubTextColor)),
+                          IconButton(
+                            onPressed: () {},
+                            icon: const Icon(Icons.settings_outlined,
+                                color: kTextColor),
                           ),
-                        ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
 
-                        // Top row: menu button (car title is shown in the large header below)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            IconButton(
-                                onPressed: () {},
-                                icon:
-                                    const Icon(Icons.menu, color: kTextColor)),
-                          ],
-                        ),
+                      // --- HERO CAR CARD ---
+                      _buildHeroVehicleCard(),
 
-                        const SizedBox(height: 12),
+                      // CHANGED: Increased spacing to reduce empty space at bottom
+                      const SizedBox(height: 40),
 
-                        // Full-width car header tile with image and details
-                        SizedBox(
-                          height: 180,
-                          child: CustomCard(
-                            padding: const EdgeInsets.all(0),
-                            child: Row(
-                              children: [
-                                // Left: car name and registration
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 20, horizontal: 20),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: const [
-                                        Text("Tata Nexon",
-                                            style: TextStyle(
-                                                fontSize: 28,
-                                                fontWeight: FontWeight.bold,
-                                                color: kTextColor)),
-                                        SizedBox(height: 6),
-                                        Text("HR35W0241",
-                                            style: TextStyle(
-                                                fontSize: 14,
-                                                color: kSubTextColor)),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                // Right: car image
-                                Container(
-                                  width: MediaQuery.of(context).size.width * 0.45,
-                                  height: double.infinity,
-                                  margin: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                          color: Colors.black54,
-                                          blurRadius: 18,
-                                          offset: Offset(0, 8))
-                                    ],
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: Stack(fit: StackFit.expand, children: [
-                                      if (_carImageLoading)
-                                        const Center(
-                                            child: CircularProgressIndicator(
-                                                color: kPrimaryColor))
-                                      else if (_carImageBytes != null)
-                                        Image.memory(
-                                          _carImageBytes!,
-                                          fit: BoxFit.cover,
-                                          alignment: Alignment.center,
-                                        )
-                                      else
-                                        Container(
-                                          color: kCardColor,
-                                          child: const Center(
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(Icons.directions_car,
-                                                    size: 64,
-                                                    color: kSubTextColor),
-                                                SizedBox(height: 8),
-                                                Text('Car image',
-                                                    style: TextStyle(
-                                                        color: kSubTextColor)),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      Positioned.fill(
-                                        child: DecoratedBox(
-                                          decoration: BoxDecoration(
-                                            gradient: LinearGradient(
-                                              begin: Alignment.centerLeft,
-                                              end: Alignment.centerRight,
-                                              colors: [
-                                                Colors.black.withOpacity(0.35),
-                                                Colors.transparent
-                                              ],
-                                              stops: const [0.0, 0.6],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ]),
-                                  ),
-                                ),
-                              ],
-                            ),
+                      // Stats Row
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 4,
+                            child: _buildSummaryCard("Last Refueling",
+                                _daysSinceLastRefuel, Icons.access_time_filled),
                           ),
-                        ),
+                          const SizedBox(width: 15),
+                          Expanded(
+                            flex: 5,
+                            child: _buildMileageCard(
+                                _lastMileage, Icons.speed_rounded),
+                          ),
+                        ],
+                      ),
 
-                        const SizedBox(height: 24),
+                      const SizedBox(height: 30),
 
-                        // Two tiles side by side: Last Refueling (1 number) and Last Mileage (2 numbers)
-                        Row(
-                          children: [
-                            // Left tile: Last Refueling (flex 1)
-                            Expanded(
-                              flex: 1,
-                              child: _buildSummaryCard(
-                                  "Last Refueling", _daysSinceLastRefuel),
-                            ),
-                            const SizedBox(width: 15),
-                            // Right tile: Last Mileage (flex 2)
-                            Expanded(
-                              flex: 2,
-                              child: _buildMileageCard(_lastMileage),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 18),
-
-                        const Center(
-                            child: Text('Tap the + button to log a refueling',
-                                style: TextStyle(
-                                    color: kSubTextColor, fontSize: 12))),
-
-                        SizedBox(
-                            height:
-                                MediaQuery.of(context).padding.bottom + 140),
-                      ],
-                    ),
+                      // --- QUICK ACTION BANNER ---
+                      _buildQuickActionBanner(),
+                      const SizedBox(height: 20),
+                    ],
                   ),
                 ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildHeroVehicleCard() {
+    return SizedBox(
+      height: 200,
+      width: double.infinity,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(25),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    kCardColor,
+                    kCardColor.withOpacity(0.7),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Icon(
+              Icons.directions_car_filled_outlined,
+              size: 150,
+              color: Colors.white.withOpacity(0.03),
+            ),
+          ),
+          Positioned(
+            top: 30,
+            left: 25,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // CHANGED: Removed "My Vehicle" text
+                const Text("Tata Nexon",
+                    style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: kTextColor,
+                        letterSpacing: 0.5)),
+                const SizedBox(height: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: kPrimaryColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                        color: kPrimaryColor.withOpacity(0.3), width: 1),
+                  ),
+                  child: const Text("HR35W0241",
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: kPrimaryColor)),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Image.network(
+              _carImageUrl,
+              height: 160,
+              width: 220,
+              fit: BoxFit.contain,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const SizedBox(height: 160, width: 220);
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return Icon(Icons.broken_image,
+                    size: 80, color: kSubTextColor.withOpacity(0.3));
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActionBanner() {
+    return GestureDetector(
+      onTap: _openLogRefuelingSheet,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              kPrimaryColor.withOpacity(0.15),
+              kPrimaryColor.withOpacity(0.05)
+            ],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: kPrimaryColor.withOpacity(0.3), width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: kPrimaryColor,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                      color: kPrimaryColor.withOpacity(0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4))
+                ],
+              ),
+              child: const Icon(Icons.local_gas_station_rounded,
+                  color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 20),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text("Log New Refueling",
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: kTextColor)),
+                SizedBox(height: 4),
+                Text("Keep your stats up to date.",
+                    style: TextStyle(fontSize: 14, color: kSubTextColor)),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Future<void> _openAddSheet() async {
-    final result = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: const LogRefuelingScreen(),
-      ),
-    );
-
-    if (result == true) {
-      // A new entry was added — refresh the list and recalculate summary
-      await _fetchData();
-    }
-  }
-
-  // Summary Card showing a large number and a small unit/label below
-  Widget _buildSummaryCard(String title, String value) {
+  Widget _buildSummaryCard(String title, String value, IconData icon) {
     String mainText = value;
     String subText = '';
-
     if (value != 'N/A') {
       if (value.contains('\n')) {
         final parts = value.split('\n');
@@ -360,35 +309,41 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return CustomCard(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title.toUpperCase(),
-              style: const TextStyle(
-                  color: kSubTextColor,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2)),
+          Row(
+            children: [
+              Icon(icon, color: kSubTextColor, size: 18),
+              const SizedBox(width: 8),
+              Text(title,
+                  style: const TextStyle(
+                      color: kSubTextColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500)),
+            ],
+          ),
           const SizedBox(height: 16),
           FittedBox(
             fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(mainText,
                     style: const TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.w900,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
                         color: kTextColor,
-                        height: 1)),
+                        height: 1.0)),
                 if (subText.isNotEmpty) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(subText,
                       style: const TextStyle(
-                          color: kSubTextColor,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold)),
+                          color: kSubTextColor, // CHANGED: Same color as label
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600)),
                 ]
               ],
             ),
@@ -398,7 +353,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMileageCard(String value) {
+  Widget _buildMileageCard(String value, IconData icon) {
     String mileageNum = 'N/A';
     String mileageUnit = '';
     String rupeesNum = 'N/A';
@@ -433,94 +388,101 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return CustomCard(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('LAST MILEAGE',
-              style: TextStyle(
-                  color: kSubTextColor,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2)),
-          const SizedBox(height: 16),
-          // All three metrics in a row: km/L on left, rupees/km on right (with rupee symbol)
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Left: km/L
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+              Icon(icon, color: kSubTextColor, size: 18),
+              const SizedBox(width: 8),
+              const Text('Last Mileage',
+                  style: TextStyle(
+                      color: kSubTextColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500)),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Mileage and Unit side-by-side
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
                   children: [
-                    // Normalize to 2 decimal places when possible
-                    Builder(builder: (ctx) {
-                      String display = mileageNum;
-                      final parsed = double.tryParse(display);
-                      if (parsed != null) display = parsed.toStringAsFixed(2);
-                      return FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(display,
-                            style: const TextStyle(
-                                fontSize: 44,
-                                fontWeight: FontWeight.w900,
-                                color: kTextColor,
-                                height: 1)),
-                      );
-                    }),
-                    const SizedBox(height: 8),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(mileageNum,
+                          style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w800,
+                              color: kTextColor,
+                              height: 1.0)),
+                    ),
+                    const SizedBox(width: 4),
                     Text(mileageUnit,
                         style: const TextStyle(
-                            color: kSubTextColor,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold)),
+                            color: kSubTextColor, // CHANGED: Grey color
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600)),
                   ],
                 ),
-              ),
-
-              const SizedBox(width: 12),
-              // Separator
-              Container(width: 1, height: 64, color: kSubTextColor),
-              const SizedBox(width: 12),
-
-              // Right: ₹/km
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                const SizedBox(height: 12),
+                // Cost part centered below
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
                   children: [
-                    Builder(builder: (ctx) {
-                      String display = rupeesNum;
-                      final parsed = double.tryParse(display);
-                      if (parsed != null) display = parsed.toStringAsFixed(2);
-                      return FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(display,
-                            style: const TextStyle(
-                                fontSize: 44,
-                                fontWeight: FontWeight.w900,
-                                color: kTextColor,
-                                height: 1)),
-                      );
-                    }),
-                    const SizedBox(height: 8),
-                    Text(
-                        // Ensure rupee symbol precedes the unit
-                        '₹${rupeesUnit.isNotEmpty ? rupeesUnit : "/km"}',
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text("₹$rupeesNum",
+                          style: const TextStyle(
+                              fontSize: 32, // CHANGED: Increased font size
+                              fontWeight:
+                                  FontWeight.w800, // CHANGED: Increased weight
+                              color: kTextColor,
+                              height: 1.0)),
+                    ),
+                    const SizedBox(width: 4),
+                    // CHANGED: Fixed double slash issue
+                    Text(rupeesUnit,
                         style: const TextStyle(
                             color: kSubTextColor,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold)),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500)),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
     );
+  }
+
+  void _openLogRefuelingSheet() async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => const LogRefuelingScreen(),
+    );
+
+    if (result == true) {
+      _fetchData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Refueling logged successfully!'),
+              backgroundColor: Colors.green),
+        );
+      }
+    }
   }
 }
