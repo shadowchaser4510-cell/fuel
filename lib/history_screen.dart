@@ -41,11 +41,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
           context: context,
           builder: (ctx) => AlertDialog(
             backgroundColor: kCardColor,
-            title: const Text('Delete Record', style: TextStyle(color: kTextColor)),
-            content: const Text('Are you sure you want to delete this record?', style: TextStyle(color: kSubTextColor)),
+            title: const Text('Delete Record',
+                style: TextStyle(color: kTextColor)),
+            content: const Text('Are you sure you want to delete this record?',
+                style: TextStyle(color: kSubTextColor)),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel', style: TextStyle(color: kSubTextColor))),
-              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel',
+                      style: TextStyle(color: kSubTextColor))),
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Delete',
+                      style: TextStyle(color: Colors.red))),
             ],
           ),
         );
@@ -54,11 +62,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
             await _apiService.deleteServiceRecord(record);
             if (mounted) {
               setState(() => _serviceRecords.removeAt(actualIndex));
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Service record deleted'), backgroundColor: Colors.green));
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Service record deleted'),
+                  backgroundColor: Colors.green));
             }
             return true;
           } catch (e) {
-            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting record: $e'), backgroundColor: Colors.red));
+            if (mounted)
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text('Error deleting record: $e'),
+                  backgroundColor: Colors.red));
             return false;
           }
         }
@@ -67,7 +80,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(15)),
+        decoration: BoxDecoration(
+            color: Colors.red, borderRadius: BorderRadius.circular(15)),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       child: GestureDetector(
@@ -76,33 +90,50 @@ class _HistoryScreenState extends State<HistoryScreen> {
               context: context,
               builder: (ctx) => AlertDialog(
                     backgroundColor: kCardColor,
-                    title: Text(DateFormat('EEE, MMM d, yyyy').format(record.date), style: const TextStyle(color: kTextColor)),
-                    content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('Odometer: ${record.odometer} km', style: const TextStyle(color: kSubTextColor)),
-                      const SizedBox(height: 8),
-                      Text('Cost: ₹${record.cost.toStringAsFixed(2)}', style: const TextStyle(color: kSubTextColor)),
-                    ]),
+                    title: Text(
+                        DateFormat('EEE, MMM d, yyyy').format(record.date),
+                        style: const TextStyle(color: kTextColor)),
+                    content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Odometer: ${record.odometer} km',
+                              style: const TextStyle(color: kSubTextColor)),
+                          const SizedBox(height: 8),
+                          Text('Cost: ₹${record.cost.toStringAsFixed(2)}',
+                              style: const TextStyle(color: kSubTextColor)),
+                        ]),
                     actions: [
                       TextButton(
                         onPressed: () {
                           Navigator.pop(ctx);
                           _editServiceRecord(record, actualIndex);
                         },
-                        child: const Text('Edit', style: TextStyle(color: kPrimaryColor)),
+                        child: const Text('Edit',
+                            style: TextStyle(color: kPrimaryColor)),
                       ),
-                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close', style: TextStyle(color: kSubTextColor)))
+                      TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('Close',
+                              style: TextStyle(color: kSubTextColor)))
                     ],
                   ));
         },
         child: CustomCard(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          child:
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(DateFormat('EEE, MMM d, yyyy').format(record.date), style: const TextStyle(color: kTextColor, fontWeight: FontWeight.bold)),
+              Text(DateFormat('EEE, MMM d, yyyy').format(record.date),
+                  style: const TextStyle(
+                      color: kTextColor, fontWeight: FontWeight.bold)),
               const SizedBox(height: 6),
-              Text('Odometer: ${record.odometer} km', style: const TextStyle(color: kSubTextColor)),
+              Text('Odometer: ${record.odometer} km',
+                  style: const TextStyle(color: kSubTextColor)),
               const SizedBox(height: 4),
-              Text('Cost: ₹${record.cost.toStringAsFixed(2)}', style: const TextStyle(color: kPrimaryColor, fontWeight: FontWeight.bold)),
+              Text('Cost: ₹${record.cost.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                      color: kPrimaryColor, fontWeight: FontWeight.bold)),
             ]),
             const Icon(Icons.chevron_right, color: kSubTextColor)
           ]),
@@ -216,7 +247,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text('Service record updated'), backgroundColor: Colors.green),
+                content: Text('Service record updated'),
+                backgroundColor: Colors.green),
           );
         }
       } catch (e) {
@@ -247,7 +279,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
             dropdownColor: kCardColor,
             items: const [
               DropdownMenuItem(value: 'fuel', child: Text('Fuel Log History')),
-              DropdownMenuItem(value: 'service', child: Text('Service History')),
+              DropdownMenuItem(
+                  value: 'service', child: Text('Service History')),
             ],
             onChanged: (val) {
               if (val == null) return;
@@ -284,8 +317,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ? (_logs.isEmpty
                       ? const Center(
                           child: Text('No fuel logs yet',
-                              style:
-                                  TextStyle(color: kSubTextColor, fontSize: 16)),
+                              style: TextStyle(
+                                  color: kSubTextColor, fontSize: 16)),
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.all(16),
@@ -298,8 +331,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   : (_serviceRecords.isEmpty
                       ? const Center(
                           child: Text('No service records yet',
-                              style:
-                                  TextStyle(color: kSubTextColor, fontSize: 16)),
+                              style: TextStyle(
+                                  color: kSubTextColor, fontSize: 16)),
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.all(16),
@@ -315,7 +348,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   void _showExportOptions() {
     final isService = _viewMode == 'service';
     final title = isService ? 'Export Service Records' : 'Export Fuel Logs';
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: kCardColor,
@@ -358,12 +391,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
     try {
       String? path;
       final isService = _viewMode == 'service';
-      
+
       if (isService) {
         if (format == 'json') {
-          path = await _apiService.exportServiceRecordsAsJson(customDir: customDir);
+          path = await _apiService.exportServiceRecordsAsJson(
+              customDir: customDir);
         } else {
-          path = await _apiService.exportServiceRecordsAsCsv(customDir: customDir);
+          path =
+              await _apiService.exportServiceRecordsAsCsv(customDir: customDir);
         }
       } else {
         if (format == 'json') {
@@ -404,15 +439,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Import Fuel Logs (CSV)',
-                style: TextStyle(
-                    color: kTextColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            const Text(
-                'CSV format (header required): date,odometer,liters,cost,isFull,tag\nDate format: YYYY-MM-DD\nExample: 2025-12-31,12345,35.7,4300,true,\\"Premium\\"',
-                style: TextStyle(color: kSubTextColor)),
+            Builder(builder: (ctx) {
+              final isService = _viewMode == 'service';
+              final title = isService ? 'Import Service Records (CSV)' : 'Import Fuel Logs (CSV)';
+              final example = isService
+                  ? 'CSV format (header required): date,odometer,cost\nDate format: YYYY-MM-DD\nExample: 2025-12-31,12345,4300'
+                  : 'CSV format (header required): date,odometer,liters,cost,isFull,tag\nDate format: YYYY-MM-DD\nExample: 2025-12-31,12345,35.7,4300,true,\"Premium\"';
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: const TextStyle(
+                          color: kTextColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  Text(example, style: const TextStyle(color: kSubTextColor)),
+                ],
+              );
+            }),
             const SizedBox(height: 16),
             Row(
               children: [
@@ -450,7 +495,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         final homeDir = Platform.environment['HOME'] ?? '';
         initialDirectory = '$homeDir/Downloads';
       }
-      
+
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['csv'],
@@ -497,7 +542,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       final distance = log.odometer - prevLog.odometer;
       if (distance > 0 && log.liters > 0) {
         final mileage = distance / log.liters;
-        mileageStr = '${mileage.toStringAsFixed(1)} km/L';
+        mileageStr = '${mileage.toStringAsFixed(2)} km/L';
         final rpk = log.cost / distance;
         rupeesPerKmStr = '₹${rpk.toStringAsFixed(2)}/km';
       }
@@ -575,7 +620,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      DateFormat('EEE, MMM d, yyyy – h:mm a').format(log.date),
+                      DateFormat('EEE, MMM d, yyyy').format(log.date),
                       style: const TextStyle(
                           color: kTextColor,
                           fontSize: 14,
@@ -625,9 +670,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '₹/km: $rupeesPerKmStr',
+                                'Cost: $rupeesPerKmStr',
                                 style: const TextStyle(
-                                    color: kSubTextColor, fontSize: 11),
+                                    color: kSubTextColor, fontSize: 12),
                               ),
                             ],
                           ),
@@ -893,7 +938,8 @@ class _EditServiceRecordDialogState extends State<_EditServiceRecordDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: kCardColor,
-      title: const Text('Edit Service Record', style: TextStyle(color: kTextColor)),
+      title: const Text('Edit Service Record',
+          style: TextStyle(color: kTextColor)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

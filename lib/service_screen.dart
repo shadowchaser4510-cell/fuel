@@ -15,7 +15,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
   final ApiService _apiService = ApiService();
   List<ServiceRecord> _records = [];
   bool _isLoading = true;
-  
+
   // Analytics state
   List<double> _recentServiceCosts = [];
   List<String> _recentServiceLabels = [];
@@ -34,7 +34,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
       final records = await _apiService.getServiceRecords();
       // Sort by odometer to assign indexes
       records.sort((a, b) => a.odometer.compareTo(b.odometer));
-      
+
       // Assign indexes based on odometer reading
       for (int i = 0; i < records.length; i++) {
         records[i] = ServiceRecord(
@@ -44,13 +44,13 @@ class _ServiceScreenState extends State<ServiceScreen> {
           index: i,
         );
       }
-      
+
       // Sort by index (which represents chronological order by odometer)
       records.sort((a, b) => a.index.compareTo(b.index));
-      
+
       // Calculate analytics
       _calculateServiceAnalytics(records);
-      
+
       setState(() {
         _records = records;
         _isLoading = false;
@@ -145,16 +145,16 @@ class _ServiceScreenState extends State<ServiceScreen> {
     // Get last 6 services
     List<double> costs = [];
     List<String> labels = [];
-    
+
     int startIndex = records.length > 6 ? records.length - 6 : 0;
     for (int i = startIndex; i < records.length; i++) {
       costs.add(records[i].cost);
       labels.add("S${i + 1}");
     }
-    
+
     _recentServiceCosts = costs;
     _recentServiceLabels = labels;
-    
+
     // Calculate days until next service (183 days after most recent service)
     if (records.isNotEmpty) {
       final mostRecent = records.last; // records are sorted by index ascending
@@ -248,7 +248,8 @@ class _ServiceScreenState extends State<ServiceScreen> {
                                   children: [
                                     if (_nextServiceDueDate != null)
                                       Text(
-                                        DateFormat('dd MMM yyyy').format(_nextServiceDueDate!),
+                                        DateFormat('dd MMM yyyy')
+                                            .format(_nextServiceDueDate!),
                                         style: const TextStyle(
                                             color: kPrimaryColor,
                                             fontSize: 18,
@@ -277,7 +278,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
                           ),
                         ),
                         const SizedBox(height: 25),
-                        
+
                         // Previous 6 Services Cost Graph
                         if (_recentServiceCosts.isNotEmpty) ...[
                           const Text("Previous Services Cost",
@@ -309,7 +310,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
                           ),
                           const SizedBox(height: 25),
                         ],
-                        
+
                         // Service records have been moved into the unified History screen.
                       ],
                     ),

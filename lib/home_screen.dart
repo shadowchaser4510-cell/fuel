@@ -40,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final logs = await _apiService.getFuelLogs();
       // Sort by odometer to assign indexes
       logs.sort((a, b) => a.odometer.compareTo(b.odometer));
-      
+
       // Assign indexes based on odometer reading
       for (int i = 0; i < logs.length; i++) {
         logs[i] = FuelLog(
@@ -53,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
           index: i,
         );
       }
-      
+
       // Sort by index for calculations
       logs.sort((a, b) => a.index.compareTo(b.index));
 
@@ -87,7 +87,9 @@ class _HomeScreenState extends State<HomeScreen> {
       if (distance > 0 && lastLog.liters > 0) {
         final mileage = distance / lastLog.liters;
         final rupeesPerKm = lastLog.cost / distance;
-        _lastMileage = "${mileage.toStringAsFixed(1)} km/L\n₹${rupeesPerKm.toStringAsFixed(2)}/km";
+        // Show both values with 2 decimals (always show trailing zero)
+        _lastMileage =
+            "${mileage.toStringAsFixed(2)} km/L\n₹${rupeesPerKm.toStringAsFixed(2)}/km";
       } else {
         // Fallback to odometer if we cannot compute mileage
         _lastMileage = "${lastLog.odometer} km";
@@ -185,62 +187,54 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         const SizedBox(height: 12),
 
-                        // Large header
+                        // Full-width car header tile with image and details
                         SizedBox(
-                          height: 260,
-                          child: Stack(
-                            children: [
-                              const Positioned.fill(
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      flex: 6,
-                                      child: Padding(
-                                        padding:
-                                            EdgeInsets.only(left: 8.0, top: 12),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.start,
-                                          children: [
-                                            SizedBox(height: 8),
-                                            Text("Tata Nexon",
-                                                style: TextStyle(
-                                                    fontSize: 30,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: kTextColor)),
-                                            SizedBox(height: 6),
-                                            Text("HR35W0241",
-                                                style: TextStyle(
-                                                    fontSize: 14,
-                                                    color: kSubTextColor)),
-                                          ],
-                                        ),
-                                      ),
+                          height: 180,
+                          child: CustomCard(
+                            padding: const EdgeInsets.all(0),
+                            child: Row(
+                              children: [
+                                // Left: car name and registration
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 20, horizontal: 20),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: const [
+                                        Text("Tata Nexon",
+                                            style: TextStyle(
+                                                fontSize: 28,
+                                                fontWeight: FontWeight.bold,
+                                                color: kTextColor)),
+                                        SizedBox(height: 6),
+                                        Text("HR35W0241",
+                                            style: TextStyle(
+                                                fontSize: 14,
+                                                color: kSubTextColor)),
+                                      ],
                                     ),
-                                    Spacer(flex: 2),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                              Positioned(
-                                right: 0,
-                                top: 20,
-                                bottom: 20,
-                                width: MediaQuery.of(context).size.width * 0.62,
-                                child: Container(
+                                // Right: car image
+                                Container(
+                                  width: MediaQuery.of(context).size.width * 0.45,
+                                  height: double.infinity,
+                                  margin: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: const [
-                                        BoxShadow(
-                                            color: Colors.black54,
-                                            blurRadius: 20,
-                                            offset: Offset(0, 8))
-                                      ]),
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                          color: Colors.black54,
+                                          blurRadius: 18,
+                                          offset: Offset(0, 8))
+                                    ],
+                                  ),
                                   child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(20),
-                                    child:
-                                        Stack(fit: StackFit.expand, children: [
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Stack(fit: StackFit.expand, children: [
                                       if (_carImageLoading)
                                         const Center(
                                             child: CircularProgressIndicator(
@@ -249,10 +243,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                         Image.memory(
                                           _carImageBytes!,
                                           fit: BoxFit.cover,
-                                          alignment: Alignment.topRight,
+                                          alignment: Alignment.center,
                                         )
                                       else
-                                        // Fallback placeholder when image failed to load
                                         Container(
                                           color: kCardColor,
                                           child: const Center(
@@ -260,7 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 Icon(Icons.directions_car,
-                                                    size: 80,
+                                                    size: 64,
                                                     color: kSubTextColor),
                                                 SizedBox(height: 8),
                                                 Text('Car image',
@@ -271,25 +264,25 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                         ),
                                       Positioned.fill(
-                                          child: DecoratedBox(
-                                              decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                            begin: Alignment.centerLeft,
-                                            end: Alignment.centerRight,
-                                            colors: [
-                                              Colors.black.withOpacity(0.55),
-                                              Colors.transparent
-                                            ],
-                                            stops: const [
-                                              0.0,
-                                              0.45
-                                            ]),
-                                      ))),
+                                        child: DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              begin: Alignment.centerLeft,
+                                              end: Alignment.centerRight,
+                                              colors: [
+                                                Colors.black.withOpacity(0.35),
+                                                Colors.transparent
+                                              ],
+                                              stops: const [0.0, 0.6],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ]),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
 
@@ -417,7 +410,9 @@ class _HomeScreenState extends State<HomeScreen> {
         final mileageParts = parts[0].split(' ');
         if (mileageParts.isNotEmpty) {
           mileageNum = mileageParts[0];
-          mileageUnit = mileageParts.length > 1 ? mileageParts.sublist(1).join(' ') : 'km/L';
+          mileageUnit = mileageParts.length > 1
+              ? mileageParts.sublist(1).join(' ')
+              : 'km/L';
         }
       }
       if (parts.length > 1 && parts[1].isNotEmpty) {
@@ -461,15 +456,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(mileageNum,
-                          style: const TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.w900,
-                              color: kTextColor,
-                              height: 1)),
-                    ),
+                    // Normalize to 2 decimal places when possible
+                    Builder(builder: (ctx) {
+                      String display = mileageNum;
+                      final parsed = double.tryParse(display);
+                      if (parsed != null) display = parsed.toStringAsFixed(2);
+                      return FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(display,
+                            style: const TextStyle(
+                                fontSize: 44,
+                                fontWeight: FontWeight.w900,
+                                color: kTextColor,
+                                height: 1)),
+                      );
+                    }),
                     const SizedBox(height: 8),
                     Text(mileageUnit,
                         style: const TextStyle(
@@ -479,23 +480,36 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
+
+              const SizedBox(width: 12),
+              // Separator
+              Container(width: 1, height: 64, color: kSubTextColor),
+              const SizedBox(width: 12),
+
               // Right: ₹/km
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(rupeesNum,
-                          style: const TextStyle(
-                              fontSize: 42,
-                              fontWeight: FontWeight.w900,
-                              color: kTextColor,
-                              height: 1)),
-                    ),
+                    Builder(builder: (ctx) {
+                      String display = rupeesNum;
+                      final parsed = double.tryParse(display);
+                      if (parsed != null) display = parsed.toStringAsFixed(2);
+                      return FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(display,
+                            style: const TextStyle(
+                                fontSize: 44,
+                                fontWeight: FontWeight.w900,
+                                color: kTextColor,
+                                height: 1)),
+                      );
+                    }),
                     const SizedBox(height: 8),
-                    Text('${rupeesUnit}₹',
+                    Text(
+                        // Ensure rupee symbol precedes the unit
+                        '₹${rupeesUnit.isNotEmpty ? rupeesUnit : "/km"}',
                         style: const TextStyle(
                             color: kSubTextColor,
                             fontSize: 13,

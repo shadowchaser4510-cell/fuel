@@ -151,7 +151,8 @@ class _LogRefuelingScreenState extends State<LogRefuelingScreen> {
                 ],
               ),
               const SizedBox(height: 15),
-              _buildInputField(_tagController, "Add Tag (Optional)", Icons.local_offer),
+              _buildInputField(
+                  _tagController, "Add Tag (Optional)", Icons.local_offer),
               const SizedBox(height: 15),
               SwitchListTile(
                 title: const Text("Full Tank?",
